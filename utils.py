@@ -26,7 +26,7 @@ def load_data_from_url(url):
         st.warning(f"Failed to fetch data from {url}. Error: {e}")
         return []
 
-@st.cache_data(ttl=time_to_live)
+@st.cache_resource(ttl=time_to_live)
 def load_data(chain_id, round_id, data_type):
     url = f"{BASE_URL}/{chain_id}/rounds/{round_id}/{data_type}.json"
     return load_data_from_url(url)
@@ -52,7 +52,7 @@ def transform_projects_data(data):
             projects.append(project_data)
     return projects
 
-@st.cache_data(ttl=time_to_live)
+@st.cache_resource(ttl=time_to_live)
 def load_passport_data():
     url = f"{BASE_URL}/passport_scores.json"
     data = load_data_from_url(url)
