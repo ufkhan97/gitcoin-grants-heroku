@@ -97,7 +97,8 @@ option = st.selectbox(
 dfv = dfv[dfv['round_name'] == option]
 dfp = dfp[dfp['round_name'] == option]
 round_data = round_data[round_data['round_name'] == option]
-
+dfp['votes'] = dfp['votes'].astype(int)
+dfp['amountUSD'] = dfp['amountUSD'].astype(float)
 col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()))
 col2.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
@@ -114,10 +115,12 @@ def create_treemap(dfp):
 
 st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
 
-df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
+#df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 
 st.write('## Projects')
-# write projects title, votes, amount USD, unique contributors
+
+
+
 df_display = dfp[['title', 'votes',  'amountUSD',]].sort_values('votes', ascending=False)
 df_display.columns = ['Title', 'Votes',  'Amount (USD)',]
 df_display['Amount (USD)'] = df_display['Amount (USD)'].apply(lambda x: '${:,.2f}'.format(x))

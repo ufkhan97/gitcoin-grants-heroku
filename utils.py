@@ -88,6 +88,7 @@ def compute_timestamp(row, starting_time, chain_starting_blocks):
     # make dt
     return pd.to_datetime(timestamp)
 
+@st.cache_resource(ttl=time_to_live)
 def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     round_data = pd.read_csv(csv_path)
     round_data = round_data[round_data['program'] == program]
@@ -131,7 +132,7 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
     dfv['rawScore'] = dfv['rawScore'].fillna(0)
-
+    del dfpp
     df_ens = pd.read_csv('ens.csv')
     df_ens['address'] = df_ens['address'].str.lower()
     
