@@ -124,6 +124,19 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     chain_starting_blocks = dfv.groupby('chain_id')['blockNumber'].min().to_dict()
     starting_time = pd.to_datetime(round_data['starting_time'].min())
     dfv['timestamp'] = dfv.apply(compute_timestamp, args=(starting_time, chain_starting_blocks), axis=1)
+    dfv['voter'] = dfv['voter'].str.lower()
+
+    dfpp = load_passport_data()
+    dfpp['address'] = dfpp['address'].str.lower()
+    dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
+    dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
+    dfv['rawScore'] = dfv['rawScore'].fillna(0)
+
+    df_ens = pd.read_csv('ens.csv')
+    df_ens['address'] = df_ens['address'].str.lower()
+    
+    dfv = pd.merge(dfv, df_ens, how='left', left_on='voter', right_on='address')
+    dfv['voter_id'] = dfv['name'].fillna(dfv['voter'])
 
     st.session_state.dfv = dfv
     st.session_state.dfp = dfp
