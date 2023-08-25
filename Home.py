@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
-import datetime
+from datetime import datetime, timezone
 import plotly.graph_objs as go
 import plotly.express as px
 import locale
@@ -70,21 +70,28 @@ def get_contribution_time_series_chart(dfv):
     fig.update_layout()
     return fig 
 
+# Set the target time: August 29th, 2023 at 12 PM UTC
+target_time = datetime(2023, 8, 29, 12, 0, tzinfo=timezone.utc)
+time_left = utils.get_time_left(target_time)
 
-st.subheader('Rounds Summary')
+
+
 
 col1, col2 = st.columns(2)
+col1.subheader('Rounds Summary')
 col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()))
 col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
 col1.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col1.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
 col1.metric('Total Rounds', '{:,.0f}'.format(dfp['round_id'].nunique()))
-col2.plotly_chart(create_token_comparison_pie_chart(dfv))
+col2.subheader("Time Left:")
+col2.subheader((time_left))
+col2.plotly_chart(create_token_comparison_pie_chart(dfv), use_container_width=True)
 
 color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
 col1, col2 = st.columns(2)
-col1.plotly_chart(get_USD_by_round_chart(dfp, color_map))
-col2.plotly_chart(get_contributions_by_round_chart(dfp, color_map))
+col1.plotly_chart(get_USD_by_round_chart(dfp, color_map), use_container_width=True)
+col2.plotly_chart(get_contributions_by_round_chart(dfp, color_map),use_container_width=True)
 st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
 

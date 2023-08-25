@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+from datetime import datetime, timezone
+
 
 BASE_URL = "https://indexer-grants-stack.gitcoin.co/data"
 time_to_live = 900  # 15 minutes
@@ -148,3 +150,11 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     st.session_state.data_loaded = True
 
     return dfv, dfp, round_data
+
+def get_time_left(target_time):
+    now = datetime.now(timezone.utc)
+    time_diff = target_time - now
+    hours, remainder = divmod(time_diff.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{time_diff.days} days   {hours} hours   {minutes} minutes"
+
