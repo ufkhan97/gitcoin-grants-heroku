@@ -74,9 +74,6 @@ def get_contribution_time_series_chart(dfv):
 target_time = datetime(2023, 8, 29, 12, 0, tzinfo=timezone.utc)
 time_left = utils.get_time_left(target_time)
 
-
-
-
 col1, col2 = st.columns(2)
 col1.subheader('Rounds Summary')
 col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()))
@@ -84,7 +81,7 @@ col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
 col1.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col1.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
 col1.metric('Total Rounds', '{:,.0f}'.format(dfp['round_id'].nunique()))
-col2.subheader("Time Left:")
+col2.subheader("⏰ Time Left:")
 col2.subheader((time_left))
 col2.plotly_chart(create_token_comparison_pie_chart(dfv), use_container_width=True)
 
