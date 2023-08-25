@@ -25,7 +25,7 @@ st.write('The Gitcoin Grants Program is a quarterly initiative that empowers eve
 st.write('You can donate to projects in the Round from August 15th 2023 12:00 UTC to August 29th 2023 12:00 UTC.')
 st.write('👉 Visit [grants.gitcoin.co](https://grants.gitcoin.co) to donate.')
 
-
+st.write('👋 If you find this tool valuable, please make a donation to the Gitcoin Matching Pool: gitcoin.eth (mainnet)')
 
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
     dfv = st.session_state.dfv
@@ -70,6 +70,21 @@ def get_contribution_time_series_chart(dfv):
     fig.update_layout()
     return fig 
 
+def create_treemap(dfp):
+    dfp['shortened_title'] = dfp['title'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
+    fig = px.treemap(dfp, path=['shortened_title'], values='amountUSD', hover_data=['title', 'amountUSD'])
+    # Update hovertemplate to format the hover information
+    fig.update_traces(
+        texttemplate='%{label}<br>$%{value:.3s}',
+        hovertemplate='<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]:,.2f}',
+        textposition='middle center',
+        textfont_size=20
+    )
+    fig.update_traces(texttemplate='%{label}<br>$%{value:.3s}', textposition='middle center', textfont_size=20)
+    fig.update_layout(font=dict(size=20))
+    fig.update_layout(height=550)
+    return fig
+
 # Set the target time: August 29th, 2023 at 12 PM UTC
 target_time = datetime(2023, 8, 29, 12, 0, tzinfo=timezone.utc)
 time_left = utils.get_time_left(target_time)
@@ -110,30 +125,11 @@ col3.metric('Total Donations',  '{:,.0f}'.format(dfp['votes'].sum()))
 col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
 col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
 
-def create_treemap(dfp):
-    dfp['shortened_title'] = dfp['title'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
-    fig = px.treemap(dfp, path=['shortened_title'], values='amountUSD', hover_data=['title', 'amountUSD'])
-    # Update hovertemplate to format the hover information
-    fig.update_traces(
-        texttemplate='%{label}<br>$%{value:.3s}',
-        hovertemplate='<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]:,.2f}',
-        textposition='middle center',
-        textfont_size=20
-    )
-
-    fig.update_traces(texttemplate='%{label}<br>$%{value:.3s}', textposition='middle center', textfont_size=20)
-    fig.update_layout(font=dict(size=20))
-    fig.update_layout(height=550)
-    return fig
-
 st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
 
 #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 
 st.write('## Projects')
-
-
-
 df_display = dfp[['title', 'votes',  'amountUSD',]].sort_values('votes', ascending=False)
 df_display.columns = ['Title', 'Votes',  'Amount (USD)',]
 df_display['Amount (USD)'] = df_display['Amount (USD)'].apply(lambda x: '${:,.2f}'.format(x))
