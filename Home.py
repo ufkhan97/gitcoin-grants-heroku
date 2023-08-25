@@ -111,10 +111,19 @@ col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
 col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
 
 def create_treemap(dfp):
-    fig = px.treemap(dfp, path=['title'], values='amountUSD', hover_data=['title'])
+    dfp['shortened_title'] = dfp['title'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
+    fig = px.treemap(dfp, path=['shortened_title'], values='amountUSD', hover_data=['title', 'amountUSD'])
+    # Update hovertemplate to format the hover information
+    fig.update_traces(
+        texttemplate='%{label}<br>$%{value:.3s}',
+        hovertemplate='<b>%{customdata[0]}</b><br>Amount: $%{customdata[1]:,.2f}',
+        textposition='middle center',
+        textfont_size=20
+    )
+
     fig.update_traces(texttemplate='%{label}<br>$%{value:.3s}', textposition='middle center', textfont_size=20)
     fig.update_layout(font=dict(size=20))
-    fig.update_layout(height=540)
+    fig.update_layout(height=550)
     return fig
 
 st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
