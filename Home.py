@@ -127,4 +127,3 @@ df_display['Amount (USD)'] = df_display['Amount (USD)'].apply(lambda x: '${:,.2f
 df_display['Votes'] = df_display['Votes'].apply(lambda x: '{:,.0f}'.format(x))
 df_display = df_display.reset_index(drop=True)
 st.dataframe(df_display, use_container_width=True, height=500)
-

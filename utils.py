@@ -116,6 +116,9 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     dfv = pd.concat(dfv_list)
     dfp = pd.concat(dfp_list)
 
+    dfp = dfp[dfp['status'] == 'APPROVED']
+    
+
     token_map = {
         "0x0000000000000000000000000000000000000000": "ETH",
         "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1": "DAI",
