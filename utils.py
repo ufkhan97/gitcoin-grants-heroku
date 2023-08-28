@@ -19,13 +19,14 @@ def safe_get(data, *keys):
             return None
     return temp
 
+### COME BACK AND FIX
 def load_data_from_url(url):
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raise an error for bad responses
+        #response.raise_for_status()  # Raise an error for bad responses
         return response.json()
     except requests.RequestException as e:
-        st.warning(f"Failed to fetch data from {url}. Error: {e}")
+        #st.warning(f"Failed to fetch data from {url}. Error: {e}")
         return []
 
 @st.cache_resource(ttl=time_to_live)
@@ -76,7 +77,8 @@ def load_passport_data():
             passports.append(passport_data)
 
     df = pd.DataFrame(passports)
-    df['rawScore'] = df['rawScore'].astype(float)
+    if not df.empty:
+        df['rawScore'] = df['rawScore'].astype(float)
     #df['last_score_timestamp'] = pd.to_datetime(df['last_score_timestamp'])
     return df
 
@@ -131,12 +133,14 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     starting_time = pd.to_datetime(round_data['starting_time'].min())
     dfv['timestamp'] = dfv.apply(compute_timestamp, args=(starting_time, chain_starting_blocks), axis=1)
     dfv['voter'] = dfv['voter'].str.lower()
-
-    dfpp = load_passport_data()
-    dfpp['address'] = dfpp['address'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
-    dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
-    dfv['rawScore'] = dfv['rawScore'].fillna(0)
+    
+    dfv['rawScore'] = 0
+    dfpp = load_passport_data()
+    if not dfpp.empty:
+        dfpp['address'] = dfpp['address'].str.lower()
+        dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
+    
     del dfpp
     df_ens = pd.read_csv('ens.csv')
     df_ens['address'] = df_ens['address'].str.lower()
