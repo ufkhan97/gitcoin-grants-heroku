@@ -52,12 +52,12 @@ dfv = dfv.groupby(['voter_id', 'grantAddress', 'title']).agg({'amountUSD': 'sum'
 # Minimum donation amount to include, start at 10
 min_donation = st.slider('Minimum donation amount', value=10, max_value=50, min_value=1, step=1)
 # Minimum passport score to include, start at 20
-min_passport_score = st.slider('Minimum Passport Score', value=0, max_value=100, min_value=0, step=1)
+#min_passport_score = st.slider('Minimum Passport Score', value=0, max_value=100, min_value=0, step=1)
 
 # Filter the dataframe to include only rows with donation amounts above the threshold
 dfv = dfv[dfv['amountUSD'] > min_donation]
 # Filter the dataframe to include only rows with donation amounts above the threshold
-df = dfv[dfv['rawScore'] > min_passport_score]
+#df = dfv[dfv['rawScore'] > min_passport_score]
 
 count_connections = dfv.shape[0]
 count_voters = dfv['voter_id'].nunique()

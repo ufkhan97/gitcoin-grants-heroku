@@ -19,7 +19,7 @@ def safe_get(data, *keys):
             return None
     return temp
 
-### COME BACK AND FIX
+### COME BACK AND FIX THIS
 def load_data_from_url(url):
     try:
         response = requests.get(url)
