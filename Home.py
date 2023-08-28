@@ -35,8 +35,6 @@ else:
     dfv, dfp, round_data = utils.load_round_data()
     data_load_state.text("")
 
-
-
 def create_token_comparison_pie_chart(dfv):
     # Group by token_symbol and sum the amountUSD
     grouped_data = dfv.groupby('token_symbol')['amountUSD'].sum().reset_index()

@@ -22,7 +22,6 @@ dfv_grouped.columns = ['Voter ID', 'Amount USD', 'Unique Grants', 'Passport Scor
 dfv_grouped = dfv_grouped.sort_values('Amount USD', ascending=False)
 dfv_grouped['Amount USD'] = dfv_grouped['Amount USD'].apply(lambda x: "${:,.2f}".format(x))
 dfv_grouped['Unique Grants'] = dfv_grouped['Unique Grants'].astype(int)
-dfv_grouped['Passport Score'] = dfv_grouped['Passport Score'].astype(float)
 st.subheader('💸 Most Generous')
 st.dataframe(dfv_grouped[['Voter ID','Amount USD']].reset_index(drop=True).head(100), width = 500)
 
