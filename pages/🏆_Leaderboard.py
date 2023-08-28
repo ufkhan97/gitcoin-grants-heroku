@@ -17,8 +17,8 @@ else:
 st.title('🏆 Donor Leaderboard')
 st.write("This leaderboard shows the top donors by amount donated, and number of unique grants donated to. It's a great way to see who's been the most generous and who's been the most loving.")
 
-dfv_grouped = dfv.groupby(['voter_id']).agg({'amountUSD': 'sum', 'grantAddress': 'nunique', 'rawScore':'max'}).reset_index()
-dfv_grouped.columns = ['Voter ID', 'Amount USD', 'Unique Grants', 'Passport Score']
+dfv_grouped = dfv.groupby(['voter_id']).agg({'amountUSD': 'sum', 'grantAddress': 'nunique'}).reset_index()
+dfv_grouped.columns = ['Voter ID', 'Amount USD', 'Unique Grants']
 dfv_grouped = dfv_grouped.sort_values('Amount USD', ascending=False)
 dfv_grouped['Amount USD'] = dfv_grouped['Amount USD'].apply(lambda x: "${:,.2f}".format(x))
 dfv_grouped['Unique Grants'] = dfv_grouped['Unique Grants'].astype(int)
