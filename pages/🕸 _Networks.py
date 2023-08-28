@@ -46,7 +46,7 @@ round_data = round_data[round_data['round_name'] == option]
 
 
 # sum amountUSD group by voter and grantAddress
-dfv = dfv.groupby(['voter_id', 'grantAddress', 'title']).agg({'amountUSD': 'sum', 'timestamp': 'min', 'rawScore':'max'}).reset_index()
+dfv = dfv.groupby(['voter_id', 'grantAddress', 'title']).agg({'amountUSD': 'sum', 'timestamp': 'min'}).reset_index()
 
 
 # Minimum donation amount to include, start at 10
