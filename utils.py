@@ -23,10 +23,10 @@ def safe_get(data, *keys):
 def load_data_from_url(url):
     try:
         response = requests.get(url)
-        #response.raise_for_status()  # Raise an error for bad responses
+        response.raise_for_status()  # Raise an error for bad responses
         return response.json()
     except requests.RequestException as e:
-        #st.warning(f"Failed to fetch data from {url}. Error: {e}")
+        st.warning(f"Failed to fetch data from {url}. Error: {e}")
         return []
 
 @st.cache_resource(ttl=time_to_live)
@@ -147,7 +147,9 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     
     dfv = pd.merge(dfv, df_ens, how='left', left_on='voter', right_on='address')
     dfv['voter_id'] = dfv['name'].fillna(dfv['voter'])
-
+    # drop duplicates
+    dfv = dfv.drop_duplicates()
+    
     st.session_state.dfv = dfv
     st.session_state.dfp = dfp
     st.session_state.round_data = round_data
