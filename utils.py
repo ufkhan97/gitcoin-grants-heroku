@@ -135,13 +135,13 @@ def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
     dfv['voter'] = dfv['voter'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     
-    dfv['rawScore'] = 0
-    dfpp = load_passport_data()
-    if not dfpp.empty:
-        dfpp['address'] = dfpp['address'].str.lower()
-        dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
+    #dfv['rawScore'] = 0
+    #dfpp = load_passport_data()
+    #if not dfpp.empty:
+    #    dfpp['address'] = dfpp['address'].str.lower()
+    #    dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
     
-    del dfpp
+   # del dfpp
     df_ens = pd.read_csv('ens.csv')
     df_ens['address'] = df_ens['address'].str.lower()
     
