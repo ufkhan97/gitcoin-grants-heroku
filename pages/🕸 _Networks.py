@@ -10,7 +10,7 @@ import networkx as nx
 import time
 import utils
 
-BASE_URL = "https://indexer-grants-stack.gitcoin.co/data"
+BASE_URL = "https://indexer-production.fly.dev/data/"
 time_to_live = 900  # 15 minutes
 
 st.set_page_config(
