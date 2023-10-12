@@ -93,7 +93,7 @@ def compute_timestamp(row, starting_time, chain_starting_blocks):
     return pd.to_datetime(timestamp)
 
 @st.cache_resource(ttl=time_to_live)
-def load_round_data(program='GG18', csv_path='gg18_rounds.csv'):
+def load_round_data(program, csv_path='all_rounds.csv'):
     round_data = pd.read_csv(csv_path)
     round_data = round_data[round_data['program'] == program]
 
