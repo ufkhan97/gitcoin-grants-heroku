@@ -4,6 +4,13 @@ import numpy as np
 import plotly.graph_objs as go
 import plotly.express as px
 import utils 
+program_data = pd.read_csv("all_rounds.csv")
+program_option = st.selectbox( 'Select Program', program_data['program'].unique())
+st.title(program_option)
+
+if "program_option" in st.session_state and st.session_state.program_option != program_option:
+    st.session_state.data_loaded = False
+st.session_state.program_option = program_option
 
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
     dfv = st.session_state.dfv
@@ -11,7 +18,7 @@ if "data_loaded" in st.session_state and st.session_state.data_loaded:
     round_data = st.session_state.round_data
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, round_data = utils.load_round_data()
+    dfv, dfp, round_data = utils.load_round_data(program_option, "all_rounds.csv")
     data_load_state.text("")
 
 st.title('🏆 Donor Leaderboard')

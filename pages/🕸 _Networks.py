@@ -23,6 +23,13 @@ st.title('🕸 Gitcoin Grants Networks')
 st.write('This network graph helps visualize the connections between donors and projects in the Gitcoin Grants Beta Rounds. The graph is interactive, so you can hover over a node to see who it is, zoom in and out and drag the graph around to explore it.')
 st.write('One use for this graph is to identify interesting outliers such as grants who have their own distinct donor base.')
 
+program_data = pd.read_csv("all_rounds.csv")
+program_option = st.selectbox( 'Select Program', program_data['program'].unique())
+st.title(program_option)
+
+if "program_option" in st.session_state and st.session_state.program_option != program_option:
+    st.session_state.data_loaded = False
+st.session_state.program_option = program_option
 
 
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
@@ -31,7 +38,7 @@ if "data_loaded" in st.session_state and st.session_state.data_loaded:
     round_data = st.session_state.round_data
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, round_data = utils.load_round_data()
+    dfv, dfp, round_data = utils.load_round_data(program_option, "all_rounds.csv")
     data_load_state.text("")
     
 
