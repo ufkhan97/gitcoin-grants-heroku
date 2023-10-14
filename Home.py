@@ -139,8 +139,8 @@ st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
 
 st.write('## Grants Leaderboard')
 df_display = dfp[['title', 'votes',  'amountUSD',]].sort_values('votes', ascending=False)
-df_display.columns = ['Title', 'Votes',  'Amount (USD)',]
-df_display['Amount (USD)'] = df_display['Amount (USD)'].apply(lambda x: '${:,.2f}'.format(x))
+df_display.columns = ['Title', 'Votes',  '$ Amount (USD)',]
 df_display['Votes'] = df_display['Votes'].apply(lambda x: '{:,.0f}'.format(x))
+df_display['$ Amount (USD)'] = df_display['$ Amount (USD)'].round(2)
 df_display = df_display.reset_index(drop=True)
 st.dataframe(df_display, use_container_width=True, height=500)

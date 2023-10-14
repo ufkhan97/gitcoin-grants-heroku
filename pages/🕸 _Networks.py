@@ -45,7 +45,7 @@ else:
 # selectbox to select the round
 option = st.selectbox(
     'Select Round',
-    dfv['round_name'].unique(), index=3)
+    dfv['round_name'].unique())
 
 dfv = dfv[dfv['round_name'] == option]
 dfp = dfp[dfp['round_name'] == option]
