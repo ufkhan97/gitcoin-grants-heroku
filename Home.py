@@ -56,7 +56,7 @@ def create_token_comparison_bar_chart(dfv):
     grouped_data['percentage'] = (grouped_data['amountUSD'] / total_amountUSD) 
     # Create the bar chart with renamed axes and title
     fig = px.bar(grouped_data, x='token_symbol', y='amountUSD', 
-                 title='Token Contributions in USD', 
+                 title='Contributions (in USD) by Token', 
                  labels={'token_symbol': 'Token', 'amountUSD': 'Contribution (USD)'})
     # Update hover template to display clean USD numbers
     fig.update_traces(hovertemplate='Token: %{x}<br>Contribution: $%{y:,.2f}')
@@ -82,8 +82,8 @@ def create_token_comparison_bar_chart(dfv):
 
 def get_USD_by_round_chart(dfp, color_map):
     grouped_data = dfp.groupby('round_name')['amountUSD'].sum().reset_index().sort_values('amountUSD', ascending=False)
-    fig = px.bar(grouped_data, y='round_name', x='amountUSD', title='Crowdfunded (in $) by Round', 
-                 color='round_name', labels={'amountUSD': 'Crowdfunded Amount ($)', 'round_name': 'Round Name'}, 
+    fig = px.bar(grouped_data, y='round_name', x='amountUSD', title='Crowdfunded (in USD) by Round', 
+                 color='round_name', labels={'amountUSD': 'Crowdfunded Amount (USD)', 'round_name': 'Round Name'}, 
                  color_discrete_map=color_map, orientation='h')
     fig.update_traces(hovertemplate='Amount: $%{x:,.2f}', texttemplate='$%{x:,.3s}', textposition='auto')
     fig.update_layout(showlegend=False, height=600)  # Expanded height
