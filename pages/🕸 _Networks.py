@@ -10,12 +10,9 @@ import networkx as nx
 import time
 import utils
 
-BASE_URL = "https://indexer-production.fly.dev/data/"
-time_to_live = 900  # 15 minutes
-
 st.set_page_config(
-    page_title="Gitcoin Grants Networks",
-    page_icon="📊",
+    page_title="Data - Gitcoin Networks",
+    page_icon="favicon.png",
     layout="wide",
 )
 
@@ -53,7 +50,7 @@ round_data = round_data[round_data['round_name'] == option]
 
 
 # sum amountUSD group by voter and grantAddress
-dfv = dfv.groupby(['voter_id', 'grantAddress', 'title']).agg({'amountUSD': 'sum', 'timestamp': 'min'}).reset_index()
+dfv = dfv.groupby(['voter_id', 'grantAddress', 'title']).agg({'amountUSD': 'sum', 'block_timestamp': 'min'}).reset_index()
 
 
 # Minimum donation amount to include, start at 10
@@ -71,7 +68,7 @@ count_voters = dfv['voter_id'].nunique()
 count_grants = dfv['title'].nunique()
 
 # Sort the DataFrame by timestamp
-dfv = dfv.sort_values(by='timestamp')
+dfv = dfv.sort_values(by='block_timestamp')
 
 # Check if the number of connections exceeds 10,000
 if dfv.shape[0] > 10000:

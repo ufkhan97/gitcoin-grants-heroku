@@ -82,15 +82,38 @@ def load_passport_data():
     #df['last_score_timestamp'] = pd.to_datetime(df['last_score_timestamp'])
     return df
 
-def compute_timestamp(row, starting_time, chain_starting_blocks):
-    # Get the starting block for the chain_id
-    starting_block = chain_starting_blocks[row['chain_id']]
-    # Determine the increment based on the chain_id
-    increment = 12.0 if row['chain_id'] == 1 else 2
-    # Calculate the timestamp based on the blockNumber and starting block
-    timestamp = starting_time + pd.to_timedelta((row['blockNumber'] - starting_block) * increment, unit='s')
-    # make dt
-    return pd.to_datetime(timestamp)
+def get_chain_block_range(dfv):
+    chain_ids_blocks_range = dfv.groupby('chain_id')['blockNumber'].agg(['min', 'max']).reset_index()
+    chain_ids_blocks_range['min'] = chain_ids_blocks_range['min'].astype(int)
+    chain_ids_blocks_range['max'] = chain_ids_blocks_range['max'].astype(int)
+    return chain_ids_blocks_range.values.tolist()
+
+def generate_block_timestamps(chain_ids_blocks_range,round_starting_time):
+    # Create an empty DataFrame for the results
+    result_df = pd.DataFrame(columns=['chain_id', 'block_number', 'block_timestamp'])
+    dataframe = pd.read_csv('chain_blocktimes.csv')
+    for chain_id, min_block, max_block in chain_ids_blocks_range:
+        chain_data = dataframe[dataframe['chainId'] == chain_id].iloc[0]
+        if not chain_data.empty:
+            # Calculate the average time per block
+            total_time = pd.to_datetime(chain_data['max_time']) - pd.to_datetime(chain_data['min_time'])
+            total_blocks = chain_data['max_block'] - chain_data['min_block']
+            avg_time_per_block = total_time / total_blocks
+            # Generate block numbers within the range
+            block_numbers = np.arange( min_block,
+                                       max_block + 1,
+                                      1)
+            # Generate timestamps
+            start_time = pd.to_datetime(chain_data['min_time']) + avg_time_per_block * (min_block - chain_data['min_block'])
+            timestamps = pd.date_range(start=start_time, periods=len(block_numbers), freq=avg_time_per_block)
+            # Create a temporary DataFrame and append to the result
+            temp_df = pd.DataFrame({'chain_id': chain_id,
+                                    'block_number': block_numbers,
+                                    'block_timestamp': timestamps})
+            #temp_df = temp_df[temp_df['block_timestamp'] >= round_starting_time]
+            result_df = pd.concat([result_df, temp_df], ignore_index=True)
+    return result_df
+
 
 @st.cache_resource(ttl=time_to_live)
 def load_round_data(program, csv_path='all_rounds.csv'):
@@ -123,15 +146,15 @@ def load_round_data(program, csv_path='all_rounds.csv'):
     dfp = dfp[dfp['status'] == 'APPROVED']
     
 
-    token_map = {
-        "0x0000000000000000000000000000000000000000": "ETH",
-        "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1": "DAI",
-    }
-    dfv["token_symbol"] = dfv["token"].map(token_map)
+    token_map = pd.read_csv('token_map.csv')
+    dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token'])
 
     chain_starting_blocks = dfv.groupby('chain_id')['blockNumber'].min().to_dict()
     starting_time = pd.to_datetime(round_data['starting_time'].min())
-    dfv['timestamp'] = dfv.apply(compute_timestamp, args=(starting_time, chain_starting_blocks), axis=1)
+    chain_block_range = get_chain_block_range(dfv)
+    df_times = generate_block_timestamps(chain_block_range, starting_time)
+    df_times = df_times[df_times['block_timestamp'] >= starting_time]
+    dfv = pd.merge(dfv, df_times, how='left', left_on=['chain_id', 'blockNumber'], right_on=['chain_id', 'block_number'])
     dfv['voter'] = dfv['voter'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     
