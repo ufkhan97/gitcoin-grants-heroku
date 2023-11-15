@@ -11,6 +11,8 @@ st.set_page_config(
     layout="wide",
 )
 
+st.title('🏆 Donor Leaderboard')
+st.write("This leaderboard shows the top donors by amount donated, and number of unique grants donated to. It's a great way to see who's been the most generous and who's been the most loving.")
 
 program_data = pd.read_csv("all_rounds.csv")
 program_option = st.selectbox( 'Select Program', program_data['program'].unique())
@@ -29,8 +31,6 @@ else:
     dfv, dfp, round_data = utils.load_round_data(program_option, "all_rounds.csv")
     data_load_state.text("")
 
-st.title('🏆 Donor Leaderboard')
-st.write("This leaderboard shows the top donors by amount donated, and number of unique grants donated to. It's a great way to see who's been the most generous and who's been the most loving.")
 
 dfv_grouped = dfv.groupby(['voter_id']).agg({'amountUSD': 'sum', 'grantAddress': 'nunique'}).reset_index()
 dfv_grouped.columns = ['Voter ID', 'Amount USD', 'Unique Grants']
