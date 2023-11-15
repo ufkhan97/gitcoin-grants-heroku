@@ -157,9 +157,9 @@ col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container
 if dfp['round_id'].nunique() > 1:
     color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
     col1, col2 = st.columns(2)
-    col1.plotly_chart(get_USD_by_round_chart(dfp, color_map), use_container_width=True)
-    col2.plotly_chart(create_token_comparison_bar_chart(dfv), use_container_width=True)
-
+    col1.plotly_chart(create_token_comparison_bar_chart(dfv), use_container_width=True)
+    col2.plotly_chart(get_USD_by_round_chart(dfp, color_map), use_container_width=True)
+    
     st.title("Round Details")
     # selectbox to select the round
     option = st.selectbox(
