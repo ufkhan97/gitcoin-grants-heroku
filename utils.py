@@ -5,7 +5,7 @@ import requests
 from datetime import datetime, timezone
 
 
-BASE_URL = "https://indexer-production.fly.dev/data/"
+BASE_URL = "https://indexer-production.fly.dev/data"
 time_to_live = 900  # 15 minutes
 
 # Helper function to load data from URLs

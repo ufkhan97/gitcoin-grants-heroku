@@ -102,11 +102,11 @@ col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()
 col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
 col1.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col1.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
-col1.metric('Total Rounds', '{:,.0f}'.format(dfp['round_id'].nunique()))
+col1.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
 #col2.subheader("⏰ Time Left:")
 #col2.subheader((time_left))
 col2.plotly_chart(create_token_comparison_pie_chart(dfv), use_container_width=True)
-st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
+#st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
 if dfp['round_id'].nunique() > 1:
     color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
