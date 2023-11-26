@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 
 BASE_URL = "https://indexer-production.fly.dev/data"
-time_to_live = 900  # 15 minutes
+time_to_live = 3600  # 60 minutes
 
 # Helper function to load data from URLs
 def safe_get(data, *keys):
@@ -19,14 +19,15 @@ def safe_get(data, *keys):
             return None
     return temp
 
-### COME BACK AND FIX THIS
+
+@st.cache_resource(ttl=time_to_live)
 def load_data_from_url(url):
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise an error for bad responses
         return response.json()
     except requests.RequestException as e:
-        st.warning(f"Failed to fetch data from {url}. Error: {e}")
+        print(f"Failed to fetch data from {url}. Error: {e}") ### Suppressing warnings from being public on streamlit
         return []
 
 @st.cache_resource(ttl=time_to_live)
