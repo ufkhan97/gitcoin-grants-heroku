@@ -164,8 +164,8 @@ if dfp['round_id'].nunique() > 1:
     # selectbox to select the round
     option = st.selectbox(
         'Select Round',
-        dfv['round_name'].unique())
-
+        round_data['options'].unique())
+    option = option.split(' - ')[0]
     dfv = dfv[dfv['round_name'] == option]
     dfp = dfp[dfp['round_name'] == option]
     round_data = round_data[round_data['round_name'] == option]

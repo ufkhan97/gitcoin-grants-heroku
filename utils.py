@@ -115,6 +115,9 @@ def generate_block_timestamps(chain_ids_blocks_range,round_starting_time):
             result_df = pd.concat([result_df, temp_df], ignore_index=True)
     return result_df
 
+def add_round_options(round_data):
+    round_data['options'] = round_data['round_name'] + ' - ' + round_data['type'].str.capitalize() + ' Round'
+    return round_data
 
 @st.cache_resource(ttl=time_to_live)
 def load_round_data(program, csv_path='all_rounds.csv'):
@@ -173,7 +176,7 @@ def load_round_data(program, csv_path='all_rounds.csv'):
     dfv['voter_id'] = dfv['name'].fillna(dfv['voter'])
     # drop duplicates
     dfv = dfv.drop_duplicates()
-
+    round_data = add_round_options(round_data)
     st.session_state.dfv = dfv
     st.session_state.dfp = dfp
     st.session_state.round_data = round_data
@@ -189,4 +192,5 @@ def get_time_left(target_time):
     if time_diff.days < 0:
         return f"0 days   0 hours   0 minutes"
     return f"{time_diff.days} days   {hours} hours   {minutes} minutes"
+
 
