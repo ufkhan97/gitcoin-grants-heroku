@@ -149,7 +149,7 @@ if program_option == 'GG19':
     target_time = datetime(2023, 11, 29, 23, 59, tzinfo=timezone.utc)
     time_left = utils.get_time_left(target_time)
     col2.subheader("⏰ Time Left:")
-    col2.subheader((time_left) + ' 🎉'🎉'🎉')
+    col2.subheader((time_left) + " 🎉🎉🎉")
 col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
 
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
