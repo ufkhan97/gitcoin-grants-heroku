@@ -38,11 +38,11 @@ dfv_grouped = dfv_grouped.sort_values('Amount USD', ascending=False)
 dfv_grouped['Amount USD'] = dfv_grouped['Amount USD'].apply(lambda x: "${:,.2f}".format(x))
 dfv_grouped['Unique Grants'] = dfv_grouped['Unique Grants'].astype(int)
 st.subheader('💸 Most Generous')
-st.dataframe(dfv_grouped[['Voter ID','Amount USD']].reset_index(drop=True).head(100), width = 500)
+st.dataframe(dfv_grouped[['Voter ID','Amount USD']].reset_index(drop=True).head(100), width = 600)
 
 dfv_grouped = dfv_grouped.sort_values('Unique Grants', ascending=False)
 st.subheader('😘 Most Loving')
-st.dataframe(dfv_grouped[['Voter ID','Unique Grants']].reset_index(drop=True).head(100), width=500)
+st.dataframe(dfv_grouped[['Voter ID','Unique Grants']].reset_index(drop=True).head(100), width=600)
 
 #dfv_grouped = dfv_grouped.sort_values('Passport Score', ascending=False)
 #st.subheader('🤝 Most Trustworthy')
