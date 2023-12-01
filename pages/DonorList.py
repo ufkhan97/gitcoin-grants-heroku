@@ -20,3 +20,8 @@ st.write("test - test")
 project_id = st.text_input('Enter Project ID', 'none')
 
 
+
+program_data = pd.read_csv("all_rounds.csv")
+program_option = st.selectbox( 'Select Program', program_data['program'].unique())
+st.title(program_option)
+
