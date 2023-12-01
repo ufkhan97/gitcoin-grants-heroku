@@ -6,7 +6,7 @@ import plotly.express as px
 import utils 
 
 st.set_page_config(
-    page_title="Data - Gitcoin Leaderboard",
+    page_title="Data - Project's donors",
     page_icon="favicon.png",
     layout="wide",
 )
@@ -37,6 +37,10 @@ else:
     data_load_state.text("")
 
 
+@st.experimental_memo
+def convert_df(df):
+   return df.to_csv(index=False).encode('utf-8')
+
 if(project_id != 'none'):
     st.write("Loading - may take upto 2 minutes")
     filtered_data = dfv[dfv['projectId'] == project_id]
@@ -49,5 +53,12 @@ if(grant != 'none'):
     required_columns = filtered_data[['title','voter_id', 'block_timestamp', 'token_symbol','amount','amountUSD', 'round_name']]
     st.dataframe(required_columns)
 
+    csv = convert_df(required_columns)
 
-
+    st.download_button(
+       "Press to Download",
+       csv,
+       "donors.csv",
+       "text/csv",
+       key='download-csv'
+    )
