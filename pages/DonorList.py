@@ -38,4 +38,11 @@ else:
     data_load_state.text("")
 
 
+if(project_id != 'none'):
+    st.write("Loading - may take upto 2 minutes")
+    filtered_data = dfv[dfv['projectId'] == project_id]
+    required_columns = filtered_data[['voter_id', 'block_timestamp', 'token_symbol','amount','amountUSD', 'round_name']]
+    st.dataframe(required_columns)
+
+
 
