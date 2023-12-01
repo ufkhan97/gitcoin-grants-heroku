@@ -15,9 +15,10 @@ st.title('💸 Projects and their donors')
 
 st.write("This page gives you the list of donors for a particular project after you enter the project id.The projectid should have the same capitalization as is given in gitcoin")
 
-st.write("updated")
-#grant = st.text_input('Enter grant address', 'none')
-project_id = st.text_input('Enter Project ID', 'none')
+st.write("This is a test")
+
+grant = st.text_input('Enter grant address', 'none')
+project_id = st.text_input('or Enter Project ID', 'none')
 
 program_data = pd.read_csv("all_rounds.csv")
 program_option = st.selectbox( 'Select Program', program_data['program'].unique())
@@ -44,9 +45,11 @@ if(project_id != 'none'):
     required_columns = filtered_data[['voter_id', 'block_timestamp', 'token_symbol','amount','amountUSD', 'round_name']]
     st.dataframe(required_columns)
 
-#if(grant != 'none'):
-#    st.write("Loading - may take upto 2 minutes")
-#    filtered_data = dfv[dfv['grantAddress'] == grant]
-#    required_columns = filtered_data[['title','voter_id', 'block_timestamp', 'token_symbol','amount','amountUSD', 'round_name']]
-#    st.dataframe(required_columns)
+if(grant != 'none'):
+    st.write("Loading - may take upto 2 minutes")
+    filtered_data = dfv[dfv['grantAddress'] == grant]
+    required_columns = filtered_data[['title','voter_id', 'block_timestamp', 'token_symbol','amount','amountUSD', 'round_name']]
+    st.dataframe(required_columns)
+
+
 
