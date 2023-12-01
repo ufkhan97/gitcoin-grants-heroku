@@ -34,4 +34,11 @@ else:
     data_load_state.text("")
 
 
+project_id = st.text_input('Enter Project ID', 'none')
+filtered_data = dfv[dfv['projectId'] == project_id]
+
+required_columns = filtered_data[['voter_id', 'block_timestamp', 'token_symbol','amount','amountUSD', 'round_name']]
+
+    st.dataframe(required_columns)
+
 
