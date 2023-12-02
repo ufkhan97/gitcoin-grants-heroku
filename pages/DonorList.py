@@ -13,7 +13,7 @@ st.set_page_config(
 
 st.title('💸 Projects and their donors')
 
-st.write("This page gives you the list of donors for a particular project after you enter the grant address or the project id.The grant address or the projectid should have the same capitalization as is given in gitcoin")
+st.write("This page gives you the list of donors for a particular project after you enter the grant recipient address or the project id.The grant address or the projectid should have the same capitalization as is given in gitcoin")
 
 grant = st.text_input('Enter grant address', 'none')
 project_id = st.text_input('or Enter Project ID', 'none')
