@@ -21,9 +21,7 @@ st.set_page_config(
 # https://gitcoin-grants-51f2c0c12a8e.herokuapp.com/
 
 
-with open("6433c5d029c6bb20c5f00bf8_GTC-Logotype-Dark.svg", "r") as file:
-    svg_image = file.read().replace('<svg', '<svg style="max-width: 300px;"')
-st.markdown(svg_image, unsafe_allow_html=True)
+st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
 st.write('')
 st.write('The Gitcoin Grants Program is a quarterly initiative that empowers everyday believers to drive funding toward what they believe matters, with the impact of individual donations being magnified by the use of the [Quadratic Funding (QF)](https://wtfisqf.com) distribution mechanism.')
 st.write('👉 Visit [grants.gitcoin.co](https://grants.gitcoin.co) to donate to your favorite projects.')
