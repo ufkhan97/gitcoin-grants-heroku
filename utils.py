@@ -3,10 +3,51 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime, timezone
+import psycopg2 as pg
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # This loads the variables from .env
+
+# Now you can use os.getenv to access your variables
+db_host= os.getenv('DB_HOST')
+db_port = os.getenv('DB_PORT')
+db_name = os.getenv('DB_NAME')
+db_username = os.getenv('DB_USERNAME')
+db_password = os.getenv('DB_PASSWORD')
 
 
 BASE_URL = "https://indexer-production.fly.dev/data"
 time_to_live = 3600  # 60 minutes
+
+def run_query(query):
+    """Run query and return results"""
+    try:
+        conn = pg.connect(host=db_host, port=db_port, dbname=db_name, user=db_username, password=db_password)
+        cur = conn.cursor()
+        cur.execute(query)
+        col_names = [desc[0] for desc in cur.description]
+        results = pd.DataFrame(cur.fetchall(), columns=col_names)
+    except pg.Error as e:
+        st.warning(f"ERROR: Could not execute the query. {e}")
+    finally:
+        conn.close()
+    return results
+
+def run_query_from_file(filename):
+    try:
+        with open(filename, 'r') as f:
+            query = f.read()
+    except IOError:
+        print(f"Error: File {filename} not found or not readable.")
+        return None
+    
+    try:
+        return run_query(query)
+    except Exception as e:
+        print(f"Error: Failed to execute query. {e}")
+        return None
+    
 
 # Helper function to load data from URLs
 def safe_get(data, *keys):
