@@ -6,7 +6,7 @@ import plotly.express as px
 import utils 
 
 st.set_page_config(
-    page_title="Data - Gitcoin Leaderboard",
+    page_title="Data - Gitcoin Stats",
     page_icon="favicon.png",
     layout="wide",
 )

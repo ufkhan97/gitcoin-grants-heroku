@@ -23,7 +23,7 @@ st.set_page_config(
 
 st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
 st.write('')
-st.write('The Gitcoin Grants Program is a quarterly initiative that empowers everyday believers to drive funding toward what they believe matters, with the impact of individual donations being magnified by the use of the [Quadratic Funding (QF)](https://wtfisqf.com) distribution mechanism.')
+st.write('The Gitcoin Grants Program is a quarterly initiative that empowers individuals to drive funding toward what they believe matters, with the impact of their contribution being magnified by the use of the [Quadratic Funding (QF)](https://wtfisqf.com) distribution mechanism.')
 st.write('👉 Visit [grants.gitcoin.co](https://grants.gitcoin.co) to donate to your favorite projects.')
 st.write('👉 If you find this tool valuable, make a donation to the Gitcoin Matching Pool: gitcoin.eth (mainnet)')
 
@@ -183,7 +183,6 @@ st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
 st.write('## Grants Leaderboard')
 df_display = dfp[['title', 'votes',  'amountUSD',]].sort_values('votes', ascending=False)
 df_display.columns = ['Title', 'Votes',  '$ Amount (USD)',]
-df_display['Votes'] = df_display['Votes'].apply(lambda x: '{:,.0f}'.format(x))
 df_display['$ Amount (USD)'] = df_display['$ Amount (USD)'].round(2)
 df_display = df_display.reset_index(drop=True)
 st.dataframe(df_display, use_container_width=True, height=500)
