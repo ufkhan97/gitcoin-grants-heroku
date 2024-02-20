@@ -84,17 +84,17 @@ count_grants = dfv['title'].nunique()
 color_toggle = st.checkbox('Toggle colors', value=True)
 
 if color_toggle:
+    grants_color = '#00433B'
+    grantee_color_string = 'moss'
+    voters_color = '#C4F092'
+    voter_color_string = 'lightgreen'
+    line_color = '#6E9A82'
+else:
     grants_color = '#FF7043'
     grantee_color_string = 'orange'
     voters_color = '#B3DE9F'
     voter_color_string = 'green'
     line_color = '#6E9A82'
-else:
-    grants_color = 'blue'
-    grantee_color_string = 'blue'
-    voters_color = 'red'
-    voter_color_string = 'red'
-    line_color = '#008F11'
 
 note_string = '**- Note: ' + str(count_grants) + ' Grantees are in ' + grantee_color_string + ' and ' + str(count_voters) + ' donors/voters are in ' + voter_color_string + ' forming ' + str(count_connections) + ' connections. For visual clarity, only 10k connections are shown.**'
 st.markdown(note_string)
