@@ -4,17 +4,17 @@ import numpy as np
 import requests
 from datetime import datetime, timezone
 import psycopg2 as pg
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import os
 
-load_dotenv()  # This loads the variables from .env
+#load_dotenv()  # This loads the variables from .env
 
 # Now you can use os.getenv to access your variables
-db_host= os.getenv('DB_HOST')
-db_port = os.getenv('DB_PORT')
-db_name = os.getenv('DB_NAME')
-db_username = os.getenv('DB_USERNAME')
-db_password = os.getenv('DB_PASSWORD')
+db_host= os.environ['DB_HOST']
+db_port = os.environ['DB_PORT']
+db_name = os.environ['DB_NAME']
+db_username = os.environ['DB_USERNAME']
+db_password = os.environ['DB_PASSWORD']
 
 
 BASE_URL = "https://indexer-production.fly.dev/data"
