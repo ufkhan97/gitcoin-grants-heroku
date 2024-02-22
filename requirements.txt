@@ -4,3 +4,4 @@ pandas
 numpy
 networkx
 scipy
+psycopg2-binary
