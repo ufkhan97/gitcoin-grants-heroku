@@ -34,6 +34,7 @@ def run_query(query):
         conn.close()
     return results
 
+@st.cache_resource(ttl=3600)
 def run_query_from_file(filename):
     try:
         with open(filename, 'r') as f:
