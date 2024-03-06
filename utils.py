@@ -4,17 +4,6 @@ import numpy as np
 import requests
 from datetime import datetime, timezone
 import psycopg2 as pg
-#from dotenv import load_dotenv
-import os
-
-#load_dotenv()  # This loads the variables from .env
-
-# Now you can use os.getenv to access your variables
-db_host= os.environ['DB_HOST']
-db_port = os.environ['DB_PORT']
-db_name = os.environ['DB_NAME']
-db_username = os.environ['DB_USERNAME']
-db_password = os.environ['DB_PASSWORD']
 
 
 BASE_URL = "https://indexer-production.fly.dev/data"
@@ -23,7 +12,11 @@ time_to_live = 3600  # 60 minutes
 def run_query(query):
     """Run query and return results"""
     try:
-        conn = pg.connect(host=db_host, port=db_port, dbname=db_name, user=db_username, password=db_password)
+        conn = pg.connect(host=st.secrets["database"]["host"], 
+                          port=st.secrets["database"]["port"], 
+                          dbname=st.secrets["database"]["dbname"], 
+                          user=st.secrets["database"]["user"], 
+                          password=st.secrets["database"]["password"])
         cur = conn.cursor()
         cur.execute(query)
         col_names = [desc[0] for desc in cur.description]

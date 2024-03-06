@@ -23,9 +23,7 @@ st.set_page_config(
 
 st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
 st.write('')
-st.write('The Gitcoin Grants Program is a quarterly initiative that empowers individuals to drive funding toward what they believe matters, with the impact of their contribution being magnified by the use of the [Quadratic Funding (QF)](https://wtfisqf.com) distribution mechanism.')
-st.write('👉 Visit [grants.gitcoin.co](https://grants.gitcoin.co) to donate to your favorite projects.')
-st.write('👉 If you find this tool valuable, make a donation to the Gitcoin Matching Pool: gitcoin.eth (mainnet)')
+st.write('This page highlights some of the key metrics and insights from the recent Gitcoin Grants Programs. Select a program below to get started!')
 
 program_data = pd.read_csv("all_rounds.csv")
 program_option = st.selectbox( 'Select Program', program_data['program'].unique())
@@ -143,12 +141,8 @@ col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
 col1.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col1.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
 col1.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
-if program_option == 'GG19':
-    target_time = datetime(2023, 11, 29, 23, 59, tzinfo=timezone.utc)
-    time_left = utils.get_time_left(target_time)
-    col2.subheader("⏰ Time Left:")
-    col2.subheader((time_left) + " 🎉🎉🎉")
-col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
+
+#col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
 
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
