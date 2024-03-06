@@ -51,8 +51,7 @@ df = pd.DataFrame(data)
 fig = px.pie(df, values='Percentage', names='Funding Source', title='Total Funding by Percentage', hole=.3, hover_data={column: False for column in df.columns})
 fig.update_traces(
     textinfo='percent', 
-    textfont_size=15, 
-    marker=dict(line=dict(color='#000000', width=2))
+    textfont_size=15
 )
 fig.update_layout(legend=dict(
     orientation="v",
