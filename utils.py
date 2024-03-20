@@ -4,10 +4,10 @@ import numpy as np
 import requests
 from datetime import datetime, timezone
 import psycopg2 as pg
-#from dotenv import load_dotenv
+from dotenv import load_dotenv
 import os
 
-#load_dotenv()  # This loads the variables from .env
+load_dotenv()  # This loads the variables from .env
 
 # Now you can use os.getenv to access your variables
 db_host= os.environ['DB_HOST']

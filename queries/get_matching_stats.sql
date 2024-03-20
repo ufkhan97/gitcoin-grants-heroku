@@ -1,1 +1,0 @@
-SELECT sum(match_amount_usd) as "matchingfunds" from all_matching;
