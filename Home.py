@@ -27,7 +27,7 @@ st.write('This page highlights some of the key metrics and insights from the rec
 
 program_data = pd.read_csv("all_rounds.csv")
 program_option = st.selectbox( 'Select Program', program_data['program'].unique())
-st.header(program_option)
+st.title(program_option + ' Summary')
 
 if "program_option" in st.session_state and st.session_state.program_option != program_option:
     st.session_state.data_loaded = False
@@ -134,7 +134,6 @@ def create_treemap(dfp):
 
 
 col1, col2 = st.columns(2)
-col1.subheader('Summary')
 col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()))
 col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
 col1.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
@@ -148,7 +147,6 @@ if program_option == 'GG20':
     col2.subheader(time_left)
     
 col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
-
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
 if dfp['round_id'].nunique() > 1:

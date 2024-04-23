@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime, timezone
+from dateutil import parser
 import psycopg2 as pg
 import os
 from dune_client.client import DuneClient
@@ -210,6 +211,7 @@ def add_round_options(round_data):
     round_data['options'] = round_data['round_name'] + ' - ' + round_data['type'].str.capitalize() + ' Round'
     return round_data
 
+@st.cache_resource(hash_funcs={"DuneClient": lambda _: None}, show_spinner=False)
 def get_blocktime_from_dune(chain, min_block, max_block):
     sql_query_file = 'queries/get_blocktimes.sql'
     with open(sql_query_file, 'r') as file:
@@ -263,10 +265,21 @@ def load_round_data(program, csv_path='all_rounds.csv'):
         chain = blockchain_mapping.get(chain_id)
         min_block, max_block = get_chain_block_range(chain_id, dfv)
         df_times_temp = get_blocktime_from_dune(chain, min_block, max_block)
-        df_times_temp['chain_id'] = chain_id
-        df_times = pd.concat([df_times, df_times_temp], ignore_index=True)
+        min_block, max_block = float(df_times_temp['min_blocknumber']), float(df_times_temp['max_blocknumber'])
+        min_block_timestamp, max_block_timestamp = df_times_temp['min_block_timestamp'][0], df_times_temp['max_block_timestamp'][0]
+        min_block_time_seconds = parser.parse(min_block_timestamp).timestamp()
+        max_block_time_seconds = parser.parse(max_block_timestamp).timestamp()
+        average_block_time = (max_block_time_seconds - min_block_time_seconds) / (max_block - min_block)
+        blocks = dfv[(dfv['chain_id'] == chain_id)][['chain_id', 'blockNumber']].drop_duplicates()
+        blocks['block_timestamp'] = blocks['blockNumber'].apply(
+            lambda x: parser.parse(min_block_timestamp) + pd.Timedelta(
+                seconds=(float(x) - float(min_block)) * average_block_time
+            )
+        )
+        df_times = pd.concat([df_times, blocks], ignore_index=True)
+
     df_times['block_timestamp'] = pd.to_datetime(df_times['block_timestamp'])
-    dfv = pd.merge(dfv, df_times, how='left', left_on=['chain_id', 'blockNumber'], right_on=['chain_id', 'block_number'])
+    dfv = pd.merge(dfv, df_times, how='left', on=['chain_id', 'blockNumber']) 
     dfv['voter'] = dfv['voter'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     
