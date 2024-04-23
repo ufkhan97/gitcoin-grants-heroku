@@ -149,6 +149,7 @@ if program_option == 'GG20':
 col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
+
 if dfp['round_id'].nunique() > 1:
     color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
     col1, col2 = st.columns(2)
