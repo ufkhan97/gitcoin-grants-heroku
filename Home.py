@@ -105,10 +105,9 @@ def get_contribution_time_series_chart(dfv):
     return fig 
 
 def get_cumulative_amountUSD_time_series_chart(dfv):
-    dfv_cumulative = dfv.groupby([dfv['block_timestamp'].dt.strftime('%m-%d-%Y %H')])['amountUSD'].sum().cumsum()
+    dfv_cumulative = dfv.groupby([dfv['block_timestamp']])['amountUSD'].sum().cumsum()
     dfv_cumulative.index = pd.to_datetime(dfv_cumulative.index)
-    dfv_cumulative = dfv_cumulative.reindex(pd.date_range(start=dfv_cumulative.index.min(), end=dfv_cumulative.index.max(), freq='H'), method='pad')
-    fig = px.area(dfv_cumulative, x=dfv_cumulative.index, y='amountUSD', labels={'amountUSD': 'Total Donations (USD)', 'index': 'Time'}, title='Total Donations Over Time (USD)')
+    fig = px.area(dfv_cumulative, x=dfv_cumulative.index, y='amountUSD', labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Total Donations Over Time (USD)')
     fig.update_layout()
     fig.update_yaxes(tickprefix="$", tickformat="2s")
     return fig
