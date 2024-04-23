@@ -179,10 +179,14 @@ st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
 #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 
 st.write('## Grants Leaderboard')
-df_display = dfp[['title', 'votes',  'amountUSD',]].sort_values('votes', ascending=False)
-df_display.columns = ['Title', 'Votes',  '$ Amount (USD)',]
+dfp['Project Link'] = 'https://explorer.gitcoin.co/#/round/' + dfp['chain_id'].astype(str) +'/' + dfp['round_id'].astype(str) + '/' + dfp['id'].astype(str)
+df_display = dfp[['title', 'unique_donors_count', 'amountUSD', 'Project Link']].sort_values('unique_donors_count', ascending=False)
+df_display.columns = ['Title', 'Donors', '$ Amount (USD)', 'Project Link']
 df_display['$ Amount (USD)'] = df_display['$ Amount (USD)'].round(2)
 df_display = df_display.reset_index(drop=True)
-st.dataframe(df_display, use_container_width=True, height=500)
+df_display['Title'] = df_display.apply(lambda row: f'<a href="{row["Project Link"]}">{row["Title"]}</a>', axis=1)
+df_display = df_display.drop(columns=['Project Link'])
+df_html = df_display.to_html(escape=False, index=False)
+st.write(df_html, unsafe_allow_html=True)
 
 
