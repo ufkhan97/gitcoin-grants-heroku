@@ -104,11 +104,11 @@ def get_contribution_time_series_chart(dfv):
     fig.update_layout()
     return fig 
 
-def get_cumulative_amountUSD_time_series_chart(dfv):
+def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time):
     dfv_cumulative = dfv.groupby([dfv['block_timestamp']])['amountUSD'].sum().cumsum()
     dfv_cumulative.index = pd.to_datetime(dfv_cumulative.index)
     fig = px.area(dfv_cumulative, x=dfv_cumulative.index, y='amountUSD', labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Total Donations Over Time (USD)')
-    fig.update_layout()
+    fig.update_layout(xaxis_range=[starting_time, min(ending_time, dfv['block_timestamp'].max())])
     fig.update_yaxes(tickprefix="$", tickformat="2s")
     return fig
 
@@ -130,9 +130,6 @@ def create_treemap(dfp):
     return fig
 
 
-
-
-
 col1, col2 = st.columns(2)
 col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()))
 col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
@@ -146,7 +143,10 @@ if program_option == 'GG20':
     col2.subheader('🕰 Time Left ')
     col2.subheader(time_left)
     
-col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
+starting_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['starting_time'].values[0], utc=True)
+ending_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['ending_time'].values[0], utc=True)
+
+col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time), use_container_width=True)
 #st.title('lol')
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
