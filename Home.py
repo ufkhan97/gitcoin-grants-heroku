@@ -147,6 +147,7 @@ if program_option == 'GG20':
     col2.subheader(time_left)
     
 col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
+#st.title('lol')
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
 
@@ -177,6 +178,7 @@ if dfp['round_id'].nunique() > 1:
 st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
 
 #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
+
 
 st.write('## Grants Leaderboard')
 dfp['Project Link'] = 'https://explorer.gitcoin.co/#/round/' + dfp['chain_id'].astype(str) +'/' + dfp['round_id'].astype(str) + '/' + dfp['id'].astype(str)
