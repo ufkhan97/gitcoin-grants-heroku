@@ -5,3 +5,4 @@ numpy
 networkx
 scipy
 psycopg2-binary
+dune_client

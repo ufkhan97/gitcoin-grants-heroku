@@ -3,25 +3,59 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime, timezone
+from dateutil import parser
 import psycopg2 as pg
 import os
+from dune_client.client import DuneClient
+
 
 #from dotenv import load_dotenv
 #load_dotenv()  # This loads the variables from .env
 
 # Now you can use os.getenv to access your variables
-db_host= os.environ['DB_HOST']
-db_port = os.environ['DB_PORT']
-db_name = os.environ['DB_NAME']
-db_username = os.environ['DB_USERNAME']
-db_password = os.environ['DB_PASSWORD']
+grants_db_host= os.environ['GRANTS_DB_HOST']
+grants_db_port = os.environ['GRANTS_DB_PORT']
+grants_db_name = os.environ['GRANTS_DB_NAME']
+grants_db_username = os.environ['GRANTS_DB_USERNAME']
+grants_db_password = os.environ['GRANTS_DB_PASSWORD']
 
+indexer_db_host= os.environ['INDEXER_DB_HOST']
+indexer_db_port = os.environ['INDEXER_DB_PORT']
+indexer_db_name = os.environ['INDEXER_DB_NAME']
+indexer_db_username = os.environ['INDEXER_DB_USERNAME']
+indexer_db_password = os.environ['INDEXER_DB_PASSWORD']
+
+dune_api_key = os.environ['DUNE_API_KEY']
+
+blockchain_mapping = {
+        1: "ethereum",
+        10: "optimism",
+        137: "polygon",
+        250: "fantom",
+        324: "zksync",
+        8453: "base",
+        42161: "arbitrum",
+        43114: "avalanche_c",
+        534352: "scroll"
+    }
 
 BASE_URL = "https://indexer-production.fly.dev/data"
-time_to_live = 3600  # 60 minutes
+time_to_live = 900  # 15 minutes
 
-def run_query(query):
+def run_query(query, db):
     """Run query and return results"""
+    if db == 'grants':
+        db_host = grants_db_host
+        db_port = grants_db_port
+        db_name = grants_db_name
+        db_username = grants_db_username
+        db_password = grants_db_password
+    elif db == 'indexer':
+        db_host = indexer_db_host
+        db_port = indexer_db_port
+        db_name = indexer_db_name
+        db_username = indexer_db_username
+        db_password = indexer_db_password
     try:
         conn = pg.connect(host=db_host, port=db_port, dbname=db_name, user=db_username, password=db_password)
         cur = conn.cursor()
@@ -34,21 +68,37 @@ def run_query(query):
         conn.close()
     return results
 
-@st.cache_resource(ttl=3600)
-def run_query_from_file(filename):
+@st.cache_resource(ttl=time_to_live)
+def run_query_from_file(filename, db='grants'):
     try:
         with open(filename, 'r') as f:
             query = f.read()
     except IOError:
         print(f"Error: File {filename} not found or not readable.")
         return None
-    
     try:
-        return run_query(query)
+        return run_query(query, db)
     except Exception as e:
         print(f"Error: Failed to execute query. {e}")
         return None
     
+@st.cache_resource(ttl=time_to_live)
+def get_round_votes(round_id_list, chain_id):
+    sql_query_file = 'queries/get_votes.sql'
+    with open(sql_query_file, 'r') as file:
+        query = file.read()
+    query = query.format(round_id_list=round_id_list, chain_id=chain_id)
+    results = run_query(query, 'indexer')
+    return results
+
+@st.cache_resource(ttl=time_to_live)
+def get_round_projects(round_id_list, chain_id):
+    sql_query_file = 'queries/get_projects.sql'
+    with open(sql_query_file, 'r') as file:
+        query = file.read()
+    query = query.format(round_id_list=round_id_list, chain_id=chain_id)
+    results = run_query(query, 'indexer')
+    return results
 
 # Helper function to load data from URLs
 def safe_get(data, *keys):
@@ -125,11 +175,11 @@ def load_passport_data():
     #df['last_score_timestamp'] = pd.to_datetime(df['last_score_timestamp'])
     return df
 
-def get_chain_block_range(dfv):
-    chain_ids_blocks_range = dfv.groupby('chain_id')['blockNumber'].agg(['min', 'max']).reset_index()
-    chain_ids_blocks_range['min'] = chain_ids_blocks_range['min'].astype(int)
-    chain_ids_blocks_range['max'] = chain_ids_blocks_range['max'].astype(int)
-    return chain_ids_blocks_range.values.tolist()
+def get_chain_block_range(chain_id, dfv):
+    dfv = dfv[dfv['chain_id'] == chain_id]
+    min_block = dfv['blockNumber'].min()
+    max_block = dfv['blockNumber'].max()
+    return min_block, max_block
 
 def generate_block_timestamps(chain_ids_blocks_range,round_starting_time):
     # Create an empty DataFrame for the results
@@ -161,6 +211,20 @@ def add_round_options(round_data):
     round_data['options'] = round_data['round_name'] + ' - ' + round_data['type'].str.capitalize() + ' Round'
     return round_data
 
+@st.cache_resource(hash_funcs={"DuneClient": lambda _: None}, show_spinner=False)
+def get_blocktime_from_dune(chain, min_block, max_block):
+    sql_query_file = 'queries/get_blocktimes.sql'
+    with open(sql_query_file, 'r') as file:
+            query = file.read()
+    query = query.format(chain=chain, min_block=min_block, max_block=max_block)
+    client = DuneClient(api_key=dune_api_key)
+    results = client.run_sql(
+        query_sql=query, 
+        performance='large')
+    data = results.result.rows
+    df = pd.DataFrame(data)
+    return df
+
 @st.cache_resource(ttl=time_to_live)
 def load_round_data(program, csv_path='all_rounds.csv'):
     round_data = pd.read_csv(csv_path)
@@ -170,10 +234,11 @@ def load_round_data(program, csv_path='all_rounds.csv'):
     dfp_list = []
 
     for _, row in round_data.iterrows():
-        raw_projects_data = load_data(str(row['chain_id']), str(row['round_id']), "applications")
-        projects_list = transform_projects_data(raw_projects_data)
-        dfp = pd.DataFrame(projects_list)
-        dfv = pd.DataFrame(load_data(str(row['chain_id']), str(row['round_id']), "votes"))
+        round_id_list = "('" + str(row['round_id']).lower() + "')"
+
+        dfp = get_round_projects(round_id_list, row['chain_id'])
+
+        dfv = get_round_votes(round_id_list, row['chain_id'])
 
         dfp['round_id'] = row['round_id']
         dfp['chain_id'] = row['chain_id']
@@ -188,19 +253,33 @@ def load_round_data(program, csv_path='all_rounds.csv'):
 
     dfv = pd.concat(dfv_list)
     dfp = pd.concat(dfp_list)
-
     dfp = dfp[dfp['status'] == 'APPROVED']
-    
+
 
     token_map = pd.read_csv('token_map.csv')
+    token_map['token'] = token_map['token'].str.lower()
     dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token'])
 
-    chain_starting_blocks = dfv.groupby('chain_id')['blockNumber'].min().to_dict()
-    starting_time = pd.to_datetime(round_data['starting_time'].min())
-    chain_block_range = get_chain_block_range(dfv)
-    df_times = generate_block_timestamps(chain_block_range, starting_time)
-    df_times = df_times[df_times['block_timestamp'] >= starting_time]
-    dfv = pd.merge(dfv, df_times, how='left', left_on=['chain_id', 'blockNumber'], right_on=['chain_id', 'block_number'])
+    df_times = pd.DataFrame()
+    for chain_id in dfv['chain_id'].unique():
+        chain = blockchain_mapping.get(chain_id)
+        min_block, max_block = get_chain_block_range(chain_id, dfv)
+        df_times_temp = get_blocktime_from_dune(chain, min_block, max_block)
+        min_block, max_block = float(df_times_temp['min_blocknumber']), float(df_times_temp['max_blocknumber'])
+        min_block_timestamp, max_block_timestamp = df_times_temp['min_block_timestamp'][0], df_times_temp['max_block_timestamp'][0]
+        min_block_time_seconds = parser.parse(min_block_timestamp).timestamp()
+        max_block_time_seconds = parser.parse(max_block_timestamp).timestamp()
+        average_block_time = (max_block_time_seconds - min_block_time_seconds) / (max_block - min_block)
+        blocks = dfv[(dfv['chain_id'] == chain_id)][['chain_id', 'blockNumber']].drop_duplicates()
+        blocks['block_timestamp'] = blocks['blockNumber'].apply(
+            lambda x: parser.parse(min_block_timestamp) + pd.Timedelta(
+                seconds=(float(x) - float(min_block)) * average_block_time
+            )
+        )
+        df_times = pd.concat([df_times, blocks], ignore_index=True)
+
+    df_times['block_timestamp'] = pd.to_datetime(df_times['block_timestamp'])
+    dfv = pd.merge(dfv, df_times, how='left', on=['chain_id', 'blockNumber']) 
     dfv['voter'] = dfv['voter'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     
