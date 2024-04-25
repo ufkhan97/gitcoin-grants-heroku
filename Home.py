@@ -116,6 +116,7 @@ def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time):
 
 def create_treemap(dfv):
     votes_by_voter_and_project = dfv.groupby(['voter_id', 'project_name'])['amountUSD'].sum().reset_index()
+    votes_by_voter_and_project['voter_id'] = votes_by_voter_and_project['voter_id'].apply(lambda x: x[:10] + '...' if len(x) > 20 else x)
     votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
     fig = px.treemap(votes_by_voter_and_project, path=['shortened_title', 'voter_id'], values='amountUSD', hover_data=['project_name', 'amountUSD'])
     # Update hovertemplate to format the hover information
