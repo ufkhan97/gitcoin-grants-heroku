@@ -112,9 +112,12 @@ def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time):
     fig.update_yaxes(tickprefix="$", tickformat="2s")
     return fig
 
-def create_treemap(dfp):
-    dfp['shortened_title'] = dfp['title'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
-    fig = px.treemap(dfp, path=['shortened_title'], values='amountUSD', hover_data=['title', 'amountUSD'])
+
+
+def create_treemap(dfv):
+    votes_by_voter_and_project = dfv.groupby(['voter_id', 'project_name'])['amountUSD'].sum().reset_index()
+    votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
+    fig = px.treemap(votes_by_voter_and_project, path=['shortened_title', 'voter_id'], values='amountUSD', hover_data=['project_name', 'amountUSD'])
     # Update hovertemplate to format the hover information
     fig.update_traces(
         texttemplate='%{label}<br>$%{value:.3s}',
@@ -175,7 +178,7 @@ if dfp['round_id'].nunique() > 1:
     col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
     col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
 
-st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
+st.plotly_chart(create_treemap(dfv.copy()), use_container_width=True)
 
 #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 
