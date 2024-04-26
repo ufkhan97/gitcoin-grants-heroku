@@ -105,9 +105,11 @@ def get_contribution_time_series_chart(dfv):
     return fig 
 
 def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time):
-    dfv_cumulative = dfv.groupby([dfv['block_timestamp']])['amountUSD'].sum().cumsum()
-    dfv_cumulative.index = pd.to_datetime(dfv_cumulative.index)
-    fig = px.area(dfv_cumulative, x=dfv_cumulative.index, y='amountUSD', labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Total Donations Over Time (USD)')
+    dfv_grouped = dfv.groupby(['round_name', dfv['block_timestamp'].dt.floor('H')])['amountUSD'].sum().reset_index()
+    dfv_grouped.set_index(['round_name', 'block_timestamp'], inplace=True)
+    dfv_grouped = dfv_grouped.reindex(pd.MultiIndex.from_product([dfv_grouped.index.get_level_values(0).unique(), pd.date_range(start=dfv_grouped.index.get_level_values(1).min(), end=dfv_grouped.index.get_level_values(1).max(), freq='H')], names=['round_name', 'block_timestamp']), fill_value=0)
+    dfv_cumulative = dfv_grouped.groupby(level=0).cumsum()
+    fig = px.area(dfv_cumulative, x=dfv_cumulative.index.get_level_values(1), y='amountUSD', color=dfv_cumulative.index.get_level_values(0), labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Total Donations Over Time (USD) by Round')
     fig.update_layout(xaxis_range=[starting_time, min(ending_time, dfv['block_timestamp'].max())])
     fig.update_yaxes(tickprefix="$", tickformat="2s")
     return fig
@@ -153,7 +155,6 @@ ending_time = pd.to_datetime(program_data[(program_data['program'] == program_op
 col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time), use_container_width=True)
 #st.title('lol')
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
-
 
 if dfp['round_id'].nunique() > 1:
     color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
