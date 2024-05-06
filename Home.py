@@ -109,19 +109,20 @@ def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time, 
     dfv_grouped.set_index(['round_name', 'block_timestamp'], inplace=True)
     dfv_grouped = dfv_grouped.reindex(pd.MultiIndex.from_product([dfv_grouped.index.get_level_values(0).unique(), pd.date_range(start=dfv_grouped.index.get_level_values(1).min(), end=dfv_grouped.index.get_level_values(1).max(), freq='H')], names=['round_name', 'block_timestamp']), fill_value=0)
     dfv_cumulative = dfv_grouped.groupby(level=0).cumsum()
-    fig = px.area(dfv_cumulative, x=dfv_cumulative.index.get_level_values(1), y='amountUSD', color=dfv_cumulative.index.get_level_values(0), labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Total Donations Over Time (USD) by Round', color_discrete_map=color_map)
+    fig = px.area(dfv_cumulative, x=dfv_cumulative.index.get_level_values(1), y='amountUSD', color=dfv_cumulative.index.get_level_values(0), labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Cumulative Donations Over Time (USD) by Round', color_discrete_map=color_map)
     fig.update_layout(xaxis_range=[starting_time, min(ending_time, dfv['block_timestamp'].max())], showlegend=True, legend_title_text='Round')
     fig.update_xaxes(title_text='Time', nticks=5)
-    fig.update_yaxes(tickprefix="$", tickformat="2s", title_text='Total Donations (USD)')
+    fig.update_yaxes(tickprefix="$", tickformat="2s", title_text='Cumulative Donations (USD)')
     fig.update_traces(hovertemplate='<b>Round:</b> %{fullData.name}<br><b>Time:</b> %{x}<br><b>Total Donations:</b> $%{y:,.2f}')
     return fig
 
 
-
+@st.cache_resource(ttl=3600)
 def create_treemap(dfv):
     votes_by_voter_and_project = dfv.groupby(['voter_id', 'project_name'])['amountUSD'].sum().reset_index()
-    votes_by_voter_and_project['voter_id'] = votes_by_voter_and_project['voter_id'].apply(lambda x: x[:10] + '...' if len(x) > 20 else x)
-    votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
+    votes_by_voter_and_project['voter_id'] = votes_by_voter_and_project['voter_id'].str[:10] + '...'
+    votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].str[:15] + '...'
+    
     fig = px.treemap(votes_by_voter_and_project, path=['shortened_title', 'voter_id'], values='amountUSD', hover_data=['project_name', 'amountUSD'])
     # Update hovertemplate to format the hover information
     fig.update_traces(
@@ -146,11 +147,15 @@ col2.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col2.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
 col3.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
 col3.metric('Total Projects', '{:,.0f}'.format(len(dfp)))
+#col3.metric('Total Transactions', '{:,.0f}'.format(dfv['transaction_hash'].nunique()))
 
 if program_option == 'GG20':
     time_left = utils.get_time_left(pd.to_datetime('2024-05-07 23:59:59', utc=True))
-    #st.subheader('🕰 Time Left ')
-    #st.subheader(time_left)
+    st.write('')
+    if time_left != '0 days   0 hours   0 minutes':
+        st.subheader('⏰ Time Left: ' + time_left)
+    else:
+        st.subheader('🎉 Round Complete 🎉')
     
 starting_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['starting_time'].values[0], utc=True)
 ending_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['ending_time'].values[0], utc=True)

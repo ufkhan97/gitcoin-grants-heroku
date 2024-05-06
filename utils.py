@@ -100,6 +100,15 @@ def get_round_projects(round_id_list, chain_id):
     results = run_query(query, 'indexer')
     return results
 
+@st.cache_resource(ttl=time_to_live)
+def get_2024_stats():
+    sql_query_file = 'queries/get_2024_stats.sql'
+    with open(sql_query_file, 'r') as file:
+        query = file.read()
+    query = query.format()
+    results = run_query(query, 'indexer')
+    return results
+
 # Helper function to load data from URLs
 def safe_get(data, *keys):
     """Safely retrieve nested dictionary keys."""

@@ -1,9 +1,9 @@
 program,chain_id,round_id,type,chain_name,round_name,matching_pool,starting_time,ending_time,round_number
+GG20,42161,27,program,ARB,Developer Tooling,300000,4/23/2024 12:00,5/7/2024 23:59,20
+GG20,42161,26,program,ARB,Web3 Infrastructure,300000,4/23/2024 12:00:00,5/7/2024 23:59,20
 GG20,42161,25,program,ARB,dApps & Apps,300000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,23,program,ARB,Hackathon Alumni,100000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,24,community,ARB,ENS ,100000,4/23/2024 12:00,5/7/2024 23:59,20
-GG20,42161,27,program,ARB,Developer Tooling,300000,4/23/2024 12:00,5/7/2024 23:59,20
-GG20,42161,26,program,ARB,Web3 Infrastructure,300000,4/23/2024 12:00:00,5/7/2024 23:59,20
 GG20,10,9,community,OP,TEC,50000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,31,community,ARB,Open Civics,41000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,29,community,ARB,Climate Solutions,300000,4/23/2024 12:00,5/7/2024 23:59,20
