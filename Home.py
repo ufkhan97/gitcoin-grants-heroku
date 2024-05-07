@@ -142,7 +142,7 @@ def create_treemap(dfv):
 col1, col2, col3 = st.columns(3)
 
 col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum())) # UPDATE TO PULL FROM DB
-col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
+col1.metric('Total Donated', '${:,.2f}'.format(dfv['amountUSD'].sum()))
 col2.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col2.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
 col3.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
@@ -191,7 +191,8 @@ if dfp['round_id'].nunique() > 1:
     col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
     col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
 
-st.plotly_chart(create_treemap(dfv.copy()), use_container_width=True)
+treemap_dfv = dfv[dfv['projectId'].isin(dfp['projectId'])].copy()
+st.plotly_chart(create_treemap(treemap_dfv), use_container_width=True)
 
 #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 
