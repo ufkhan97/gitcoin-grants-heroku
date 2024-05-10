@@ -9,8 +9,8 @@ import os
 from dune_client.client import DuneClient
 
 
-from dotenv import load_dotenv
-load_dotenv()  # This loads the variables from .env
+#from dotenv import load_dotenv
+#load_dotenv()  # This loads the variables from .env
 
 # Now you can use os.getenv to access your variables
 grants_db_host= os.environ['GRANTS_DB_HOST']
