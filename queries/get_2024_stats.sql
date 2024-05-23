@@ -8,6 +8,6 @@ SELECT
   --count(distinct r."recipient_address") as unique_grantees
 
 FROM
-  "chain_data_63"."rounds" AS r
+  "chain_data_66"."rounds" AS r
 WHERE 
   r."donations_end_time" >= '2024-01-01';

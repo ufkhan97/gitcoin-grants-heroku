@@ -10,7 +10,7 @@ SELECT
     a.total_amount_donated_in_usd AS "amountUSD",
     a.unique_donors_count
 FROM 
-    "chain_data_63".applications AS a
+    "chain_data_66".applications AS a
 WHERE 
     a.round_id IN {round_id_list} 
     AND a.chain_id = '{chain_id}' 
