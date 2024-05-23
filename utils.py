@@ -100,6 +100,15 @@ def get_round_projects(round_id_list, chain_id):
     results = run_query(query, 'indexer')
     return results
 
+@st.cache_resource(ttl=time_to_live)
+def get_2024_stats():
+    sql_query_file = 'queries/get_2024_stats.sql'
+    with open(sql_query_file, 'r') as file:
+        query = file.read()
+    query = query.format()
+    results = run_query(query, 'indexer')
+    return results
+
 # Helper function to load data from URLs
 def safe_get(data, *keys):
     """Safely retrieve nested dictionary keys."""
@@ -235,19 +244,14 @@ def load_round_data(program, csv_path='all_rounds.csv'):
 
     for _, row in round_data.iterrows():
         round_id_list = "('" + str(row['round_id']).lower() + "')"
-
         dfp = get_round_projects(round_id_list, row['chain_id'])
-
         dfv = get_round_votes(round_id_list, row['chain_id'])
-
         dfp['round_id'] = row['round_id']
         dfp['chain_id'] = row['chain_id']
         dfp['round_name'] = row['round_name']
-
         dfv['round_id'] = row['round_id']
         dfv['chain_id'] = row['chain_id']
         dfv['round_name'] = row['round_name']
-
         dfv_list.append(dfv)
         dfp_list.append(dfp)
 
@@ -260,36 +264,10 @@ def load_round_data(program, csv_path='all_rounds.csv'):
     token_map['token'] = token_map['token'].str.lower()
     dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token'])
 
-    df_times = pd.DataFrame()
-    for chain_id in dfv['chain_id'].unique():
-        chain = blockchain_mapping.get(chain_id)
-        min_block, max_block = get_chain_block_range(chain_id, dfv)
-        df_times_temp = get_blocktime_from_dune(chain, min_block, max_block)
-        min_block, max_block = float(df_times_temp['min_blocknumber']), float(df_times_temp['max_blocknumber'])
-        min_block_timestamp, max_block_timestamp = df_times_temp['min_block_timestamp'][0], df_times_temp['max_block_timestamp'][0]
-        min_block_time_seconds = parser.parse(min_block_timestamp).timestamp()
-        max_block_time_seconds = parser.parse(max_block_timestamp).timestamp()
-        average_block_time = (max_block_time_seconds - min_block_time_seconds) / (max_block - min_block)
-        blocks = dfv[(dfv['chain_id'] == chain_id)][['chain_id', 'blockNumber']].drop_duplicates()
-        blocks['block_timestamp'] = blocks['blockNumber'].apply(
-            lambda x: parser.parse(min_block_timestamp) + pd.Timedelta(
-                seconds=(float(x) - float(min_block)) * average_block_time
-            )
-        )
-        df_times = pd.concat([df_times, blocks], ignore_index=True)
 
-    df_times['block_timestamp'] = pd.to_datetime(df_times['block_timestamp'])
-    dfv = pd.merge(dfv, df_times, how='left', on=['chain_id', 'blockNumber']) 
     dfv['voter'] = dfv['voter'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     
-    #dfv['rawScore'] = 0
-    #dfpp = load_passport_data()
-    #if not dfpp.empty:
-    #    dfpp['address'] = dfpp['address'].str.lower()
-    #    dfv = pd.merge(dfv, dfpp[['address', 'rawScore']], how='left', left_on='voter', right_on='address')
-    
-   # del dfpp
     df_ens = pd.read_csv('ens.csv')
     df_ens['address'] = df_ens['address'].str.lower()
     

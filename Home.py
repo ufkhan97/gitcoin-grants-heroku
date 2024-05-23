@@ -104,17 +104,26 @@ def get_contribution_time_series_chart(dfv):
     fig.update_layout()
     return fig 
 
-def get_cumulative_amountUSD_time_series_chart(dfv):
-    dfv_cumulative = dfv.groupby([dfv['block_timestamp']])['amountUSD'].sum().cumsum()
-    dfv_cumulative.index = pd.to_datetime(dfv_cumulative.index)
-    fig = px.area(dfv_cumulative, x=dfv_cumulative.index, y='amountUSD', labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Total Donations Over Time (USD)')
-    fig.update_layout()
-    fig.update_yaxes(tickprefix="$", tickformat="2s")
+def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time, color_map):
+    dfv_grouped = dfv.groupby(['round_name', dfv['block_timestamp'].dt.floor('H')])['amountUSD'].sum().reset_index()
+    dfv_grouped.set_index(['round_name', 'block_timestamp'], inplace=True)
+    dfv_grouped = dfv_grouped.reindex(pd.MultiIndex.from_product([dfv_grouped.index.get_level_values(0).unique(), pd.date_range(start=dfv_grouped.index.get_level_values(1).min(), end=dfv_grouped.index.get_level_values(1).max(), freq='H')], names=['round_name', 'block_timestamp']), fill_value=0)
+    dfv_cumulative = dfv_grouped.groupby(level=0).cumsum()
+    fig = px.area(dfv_cumulative, x=dfv_cumulative.index.get_level_values(1), y='amountUSD', color=dfv_cumulative.index.get_level_values(0), labels={'amountUSD': 'Total Donations (USD)', 'block_timestamp': 'Time'}, title='Cumulative Donations Over Time (USD) by Round', color_discrete_map=color_map)
+    fig.update_layout(xaxis_range=[starting_time, min(ending_time, dfv['block_timestamp'].max())], showlegend=True, legend_title_text='Round')
+    fig.update_xaxes(title_text='Time', nticks=5)
+    fig.update_yaxes(tickprefix="$", tickformat="2s", title_text='Cumulative Donations (USD)')
+    fig.update_traces(hovertemplate='<b>Round:</b> %{fullData.name}<br><b>Time:</b> %{x}<br><b>Total Donations:</b> $%{y:,.2f}')
     return fig
 
-def create_treemap(dfp):
-    dfp['shortened_title'] = dfp['title'].apply(lambda x: x[:15] + '...' if len(x) > 20 else x)
-    fig = px.treemap(dfp, path=['shortened_title'], values='amountUSD', hover_data=['title', 'amountUSD'])
+
+@st.cache_resource(ttl=3600)
+def create_treemap(dfv):
+    votes_by_voter_and_project = dfv.groupby(['voter_id', 'project_name'])['amountUSD'].sum().reset_index()
+    votes_by_voter_and_project['voter_id'] = votes_by_voter_and_project['voter_id'].str[:10] + '...'
+    votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].str[:15] + '...'
+    
+    fig = px.treemap(votes_by_voter_and_project, path=['shortened_title', 'voter_id'], values='amountUSD', hover_data=['project_name', 'amountUSD'])
     # Update hovertemplate to format the hover information
     fig.update_traces(
         texttemplate='%{label}<br>$%{value:.3s}',
@@ -130,29 +139,36 @@ def create_treemap(dfp):
     return fig
 
 
+col1, col2, col3 = st.columns(3)
 
+col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum())) # UPDATE TO PULL FROM DB
+col1.metric('Total Donated', '${:,.2f}'.format(dfv['amountUSD'].sum()))
+col2.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
+col2.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
+col3.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
+col3.metric('Total Projects', '{:,.0f}'.format(len(dfp)))
+#col3.metric('Total Transactions', '{:,.0f}'.format(dfv['transaction_hash'].nunique()))
 
-
-col1, col2 = st.columns(2)
-col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum()))
-col1.metric('Total Donated', '${:,.2f}'.format(dfp['amountUSD'].sum()))
-col1.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
-col1.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
-col1.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
-col1.metric('Total Projects', '{:,.0f}'.format(len(dfp)))
-
-if program_option == 'GG20':
-    time_left = utils.get_time_left(pd.to_datetime('2024-05-07 23:59:59', utc=True))
-    col2.subheader('🕰 Time Left ')
-    col2.subheader(time_left)
+if program_option == 'GG21':
+    time_left = utils.get_time_left(pd.to_datetime('2024-08-21 23:59:59', utc=True))
+    st.write('')
+    if time_left != '0 days   0 hours   0 minutes':
+        st.subheader('⏰ Time Left: ' + time_left)
+    else:
+        st.subheader('🎉 Round Complete 🎉')
     
-col2.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv), use_container_width=True)
+starting_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['starting_time'].values[0], utc=True)
+ending_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['ending_time'].values[0], utc=True)
+
+color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
+
+
+st.plotly_chart(get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time, color_map), use_container_width=True)
 #st.title('lol')
 #st.plotly_chart(get_contribution_time_series_chart(dfv), use_container_width=True) 
 
-
 if dfp['round_id'].nunique() > 1:
-    color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
+    
     col1, col2 = st.columns(2)
     col1.plotly_chart(create_token_comparison_bar_chart(dfv), use_container_width=True)
     col2.plotly_chart(get_USD_by_round_chart(dfp, color_map), use_container_width=True)
@@ -175,7 +191,8 @@ if dfp['round_id'].nunique() > 1:
     col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
     col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
 
-st.plotly_chart(create_treemap(dfp.copy()), use_container_width=True)
+treemap_dfv = dfv[dfv['projectId'].isin(dfp['projectId'])].copy()
+st.plotly_chart(create_treemap(treemap_dfv), use_container_width=True)
 
 #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 

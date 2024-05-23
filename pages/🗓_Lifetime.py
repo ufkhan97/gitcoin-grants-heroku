@@ -10,28 +10,29 @@ st.set_page_config(
     page_icon="favicon.png",
     layout="wide",
 )
+#st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
+st.title('📈 Lifetime Stats')
 
-#st.title('📈 Stats')
 
-st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
 st.write('')
-st.write('The Gitcoin Grants Program is a quarterly initiative that empowers individuals to drive funding toward what they believe matters, with the impact of their contribution being magnified by the use of the [Quadratic Funding (QF)](https://wtfisqf.com) distribution mechanism.')
-st.write('👉 Visit [grants.gitcoin.co](https://grants.gitcoin.co) to donate to your favorite projects.')
-st.write('👉 If you find this tool valuable, make a donation to the Gitcoin Matching Pool: gitcoin.eth (mainnet)')
 
 
 
 cf = utils.run_query_from_file('queries/get_summary_stats.sql')
+af = utils.get_2024_stats()
+#st.write(cf)
+#st.write(af)
 
 last_updated = cf['last_donation'][0].strftime('%Y-%m-%d')
-st.write('Last run: ' + last_updated)
+
 col1, col2, col3 = st.columns(3)
-col1.metric(label="Funds Distributed", value='${:,.0f}'.format(cf['crowdfunded_usd'][0] + cf['matchingfunds'][0] + cf['bounties_distributed'][0]))
-col2.metric(label="Crowdfunding", value='${:,.0f}'.format(cf['crowdfunded_usd'][0]))
-col3.metric(label="Matching Funding", value='${:,.0f}'.format(cf['matchingfunds'][0]))
-col1.metric(label="Total Unique Grants", value='{:,.0f}'.format(cf['unique_grantees'][0]))
-col2.metric(label="Total Donations", value='{:,.0f}'.format(cf['num_donations'][0]) )
-col3.metric(label="Total Unique Voters", value='{:,.0f}'.format(cf['unique_voters'][0]))
+col1.metric(label="Funds Distributed", value='${:,.0f}'.format(cf['crowdfunded_usd'][0] + cf['matchingfunds'][0]  + af['crowdfunded_usd'][0] + af['matchingfunds'][0] + cf['bounties_distributed'][0] )) 
+#col2.metric(label="Crowdfunding", value='${:,.0f}'.format(cf['crowdfunded_usd'][0] + af['crowdfunded_usd'][0]))
+#col3.metric(label="Matching Funding", value='${:,.0f}'.format(cf['matchingfunds'][0] + af['matchingfunds'][0]))
+#col1.metric(label="Total Unique Grants", value='{:,.0f}'.format(cf['unique_grantees'][0] + af['unique_grantees'][0]))
+col3.metric(label="Total Donations", value='{:,.0f}'.format(cf['num_donations'][0] + af['num_donations'][0]) )
+#col3.metric(label="Total Unique Voters", value='{:,.0f}'.format(cf['unique_voters'][0] + af['unique_voters'][0] ))
+col2.metric(label="Number of Matching Pools Paid Out", value='{:,.0f}'.format(cf['num_rounds'][0] + af['num_rounds'][0]))
 
 round_df = utils.run_query_from_file('queries/get_round_stats.sql')
 #st.write(round_df)
