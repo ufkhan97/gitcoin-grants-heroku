@@ -149,8 +149,8 @@ col3.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
 col3.metric('Total Projects', '{:,.0f}'.format(len(dfp)))
 #col3.metric('Total Transactions', '{:,.0f}'.format(dfv['transaction_hash'].nunique()))
 
-if program_option == 'GG20':
-    time_left = utils.get_time_left(pd.to_datetime('2024-05-07 23:59:59', utc=True))
+if program_option == 'GG21':
+    time_left = utils.get_time_left(pd.to_datetime('2024-08-21 23:59:59', utc=True))
     st.write('')
     if time_left != '0 days   0 hours   0 minutes':
         st.subheader('⏰ Time Left: ' + time_left)
