@@ -96,7 +96,7 @@ else:
     voter_color_string = 'green'
     line_color = '#6E9A82'
 
-note_string = '**- Note: ' + str(count_grants) + ' Grantees are in ' + grantee_color_string + ' and ' + str(count_voters) + ' donors/voters are in ' + voter_color_string + ' forming ' + str(count_connections) + ' connections. For visual clarity, only 10k connections are shown.**'
+note_string = '**- Note: ' + str(count_grants) + ' Grantees are in ' + grantee_color_string + ' and ' + str(count_voters) + ' donors/voters are in ' + voter_color_string + ' forming ' + str(count_connections) + ' connections. **'
 st.markdown(note_string)
 st.markdown('**- Tip: Go fullscreen with the arrows in the top-right for a better view.**')
 # Initialize a new Graph
