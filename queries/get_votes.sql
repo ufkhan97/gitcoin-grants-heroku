@@ -4,6 +4,7 @@ SELECT
     'project',
     'title' ] :: text [ ]
   ) :: text AS "project_name",
+    a.status,
     d.id,
     d.chain_id,
     d.round_id,
@@ -20,7 +21,10 @@ SELECT
     d.timestamp as "block_timestamp"
 FROM
     "chain_data_66".donations d
-LEFT JOIN "chain_data_66".applications a ON a.round_id = d.round_id AND a.id = d.application_id
+LEFT JOIN "chain_data_66".applications a 
+  ON a.round_id = d.round_id 
+  AND a.id = d.application_id 
+  AND a.chain_id = d.chain_id
 --AND a.status = 'APPROVED'
 WHERE d.round_id IN {round_id_list}
 AND d.chain_id = '{chain_id}'
