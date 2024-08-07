@@ -7,7 +7,7 @@ import utils
 
 st.set_page_config(
     page_title="Data - Gitcoin Stats",
-    page_icon="favicon.png",
+    page_icon="assets/favicon.png",
     layout="wide",
 )
 #st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)

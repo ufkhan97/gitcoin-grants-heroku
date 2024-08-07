@@ -7,14 +7,14 @@ import utils
 
 st.set_page_config(
     page_title="Data - Gitcoin Leaderboard",
-    page_icon="favicon.png",
+    page_icon="assets/favicon.png",
     layout="wide",
 )
 
 st.title('🏆 Donor Leaderboard')
 st.write("This leaderboard shows the top donors by amount donated, and number of unique grants donated to. It's a great way to see who's been the most generous and who's been the most loving.")
 
-program_data = pd.read_csv("all_rounds.csv")
+program_data = pd.read_csv("data/all_rounds.csv")
 program_option = st.selectbox( 'Select Program', program_data['program'].unique())
 st.title(program_option)
 
@@ -28,7 +28,7 @@ if "data_loaded" in st.session_state and st.session_state.data_loaded:
     round_data = st.session_state.round_data
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, round_data = utils.load_round_data(program_option, "all_rounds.csv")
+    dfv, dfp, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
     data_load_state.text("")
 
 

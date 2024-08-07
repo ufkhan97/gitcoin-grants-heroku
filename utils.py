@@ -6,11 +6,16 @@ from datetime import datetime, timezone
 from dateutil import parser
 import psycopg2 as pg
 import os
-from dune_client.client import DuneClient
 
 
-#from dotenv import load_dotenv
-#load_dotenv()  # This loads the variables from .env
+try:
+    from dotenv import load_dotenv
+    if load_dotenv():
+        print("Loaded .env file")
+    else:
+        print("No .env file found or loaded")
+except ImportError:
+    print("dotenv not installed, skipping .env file loading")
 
 # Now you can use os.getenv to access your variables
 grants_db_host= os.environ['GRANTS_DB_HOST']
@@ -24,8 +29,6 @@ indexer_db_port = os.environ['INDEXER_DB_PORT']
 indexer_db_name = os.environ['INDEXER_DB_NAME']
 indexer_db_username = os.environ['INDEXER_DB_USERNAME']
 indexer_db_password = os.environ['INDEXER_DB_PASSWORD']
-
-dune_api_key = os.environ['DUNE_API_KEY']
 
 blockchain_mapping = {
         1: "ethereum",
@@ -193,7 +196,7 @@ def get_chain_block_range(chain_id, dfv):
 def generate_block_timestamps(chain_ids_blocks_range,round_starting_time):
     # Create an empty DataFrame for the results
     result_df = pd.DataFrame(columns=['chain_id', 'block_number', 'block_timestamp'])
-    dataframe = pd.read_csv('chain_blocktimes.csv')
+    dataframe = pd.read_csv('data/chain_blocktimes.csv')
     for chain_id, min_block, max_block in chain_ids_blocks_range:
         chain_data = dataframe[dataframe['chainId'] == chain_id].iloc[0]
         if not chain_data.empty:
@@ -220,22 +223,9 @@ def add_round_options(round_data):
     round_data['options'] = round_data['round_name'] + ' - ' + round_data['type'].str.capitalize() + ' Round'
     return round_data
 
-@st.cache_resource(hash_funcs={"DuneClient": lambda _: None}, show_spinner=False)
-def get_blocktime_from_dune(chain, min_block, max_block):
-    sql_query_file = 'queries/get_blocktimes.sql'
-    with open(sql_query_file, 'r') as file:
-            query = file.read()
-    query = query.format(chain=chain, min_block=min_block, max_block=max_block)
-    client = DuneClient(api_key=dune_api_key)
-    results = client.run_sql(
-        query_sql=query, 
-        performance='large')
-    data = results.result.rows
-    df = pd.DataFrame(data)
-    return df
 
 @st.cache_resource(ttl=time_to_live)
-def load_round_data(program, csv_path='all_rounds.csv'):
+def load_round_data(program, csv_path='data/all_rounds.csv'):
     round_data = pd.read_csv(csv_path)
     round_data = round_data[round_data['program'] == program]
 
@@ -260,7 +250,7 @@ def load_round_data(program, csv_path='all_rounds.csv'):
     dfp = dfp[dfp['status'] == 'APPROVED']
 
 
-    token_map = pd.read_csv('token_map.csv')
+    token_map = pd.read_csv('data/token_map.csv')
     token_map['token'] = token_map['token'].str.lower()
     dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token'])
 
@@ -268,7 +258,7 @@ def load_round_data(program, csv_path='all_rounds.csv'):
     dfv['voter'] = dfv['voter'].str.lower()
     dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
     
-    df_ens = pd.read_csv('ens.csv')
+    df_ens = pd.read_csv('data/ens.csv')
     df_ens['address'] = df_ens['address'].str.lower()
     
     dfv = pd.merge(dfv, df_ens, how='left', left_on='voter', right_on='address')

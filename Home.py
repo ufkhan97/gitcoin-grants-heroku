@@ -12,7 +12,7 @@ import utils
 
 st.set_page_config(
     page_title="Data - Gitcoin Grants",
-    page_icon="favicon.png",
+    page_icon="assets/favicon.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -21,11 +21,11 @@ st.set_page_config(
 # https://gitcoin-grants-51f2c0c12a8e.herokuapp.com/
 
 
-st.image('657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
+st.image('assets/657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 300)
 st.write('')
 st.write('This page highlights some of the key metrics and insights from the recent Gitcoin Grants Programs. Select a program below to get started!')
 
-program_data = pd.read_csv("all_rounds.csv")
+program_data = pd.read_csv("data/all_rounds.csv")
 program_option = st.selectbox( 'Select Program', program_data['program'].unique())
 st.title(program_option + ' Summary')
 
@@ -40,7 +40,7 @@ if "data_loaded" in st.session_state and st.session_state.data_loaded:
     round_data = st.session_state.round_data
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, round_data = utils.load_round_data(program_option, "all_rounds.csv")
+    dfv, dfp, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
     data_load_state.text("")
 
 def create_token_comparison_bar_chart(dfv):
