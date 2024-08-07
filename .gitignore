@@ -2,3 +2,5 @@
 .env
 .streamlit/secrets.toml
 *.pyc
+.aidigestignore
+codebase.md

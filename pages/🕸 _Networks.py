@@ -1,11 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import requests
-import datetime
 import plotly.graph_objs as go
 import plotly.express as px
-import locale
 import networkx as nx
 import time
 import utils
@@ -32,10 +29,11 @@ st.session_state.program_option = program_option
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
     dfv = st.session_state.dfv
     dfp = st.session_state.dfp
+    dfr = st.session_state.dfr
     round_data = st.session_state.round_data
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
+    dfv, dfp, dfr, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
     data_load_state.text("")
     
 

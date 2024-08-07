@@ -1,14 +1,10 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import requests
 from datetime import datetime, timezone
 import plotly.graph_objs as go
 import plotly.express as px
-import locale
-import time
-import networkx as nx
 import utils
+from datetime import datetime
 
 st.set_page_config(
     page_title="Data - Gitcoin Grants",
@@ -37,10 +33,11 @@ st.session_state.program_option = program_option
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
     dfv = st.session_state.dfv
     dfp = st.session_state.dfp
+    dfr = st.session_state.dfr
     round_data = st.session_state.round_data
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
+    dfv, dfp, dfr, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
     data_load_state.text("")
 
 def create_token_comparison_bar_chart(dfv):
@@ -142,11 +139,11 @@ def create_treemap(dfv):
 
 col1, col2, col3 = st.columns(3)
 
-col1.metric('Matching Pool', '${:,.2f}'.format(round_data['matching_pool'].sum())) # UPDATE TO PULL FROM DB
-col1.metric('Total Donated', '${:,.2f}'.format(dfv['amountUSD'].sum()))
+col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].sum())) 
+col1.metric('Total Donated', '${:,.0f}'.format(dfv['amountUSD'].sum()))
 col2.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col2.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
-col3.metric('Total Rounds', '{:,.0f}'.format(round_data['round_id'].nunique()))
+col3.metric('Total Rounds', '{:,.0f}'.format(dfr.shape[0]))
 col3.metric('Total Projects', '{:,.0f}'.format(len(dfp)))
 #col3.metric('Total Transactions', '{:,.0f}'.format(dfv['transaction_hash'].nunique()))
 
@@ -158,8 +155,8 @@ if program_option == 'GG21':
     else:
         st.subheader('🎉 Round Complete 🎉')
     
-starting_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['starting_time'].values[0], utc=True)
-ending_time = pd.to_datetime(program_data[(program_data['program'] == program_option) & (program_data['type'] == 'program')]['ending_time'].values[0], utc=True)
+starting_time = pd.to_datetime(dfr['donations_start_time'].min(), utc=True)
+ending_time = pd.to_datetime(dfr['donations_end_time'].max(), utc=True)
 
 color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
 
@@ -178,15 +175,15 @@ if dfp['round_id'].nunique() > 1:
     # selectbox to select the round
     option = st.selectbox(
         'Select Round',
-        round_data['options'].unique())
+        dfr['options'].unique())
     option = option.split(' - ')[0]
     dfv = dfv[dfv['round_name'] == option]
     dfp = dfp[dfp['round_name'] == option]
-    round_data = round_data[round_data['round_name'] == option]
+    dfr = dfr[dfr['round_name'] == option]
     dfp['votes'] = dfp['votes'].astype(int)
     dfp['amountUSD'] = dfp['amountUSD'].astype(float)
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric('Matching Pool', '${:,.0f}'.format(round_data['matching_pool'].sum()))
+    col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].sum()))
     col2.metric('Total Donated', '${:,.0f}'.format(dfp['amountUSD'].sum()))
     col3.metric('Total Donations',  '{:,.0f}'.format(dfp['votes'].sum()))
     col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))

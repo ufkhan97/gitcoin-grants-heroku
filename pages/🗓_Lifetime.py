@@ -17,9 +17,9 @@ st.title('📈 Lifetime Stats')
 st.write('')
 
 
-
-cf = utils.run_query_from_file('queries/get_summary_stats.sql')
-af = utils.get_2024_stats()
+cf = utils.run_query("queries/get_summary_stats.sql", is_file=True)
+af = utils.get_2024_stats()  # This calls the updated function in utils.py
+round_df = utils.run_query("queries/get_round_stats.sql", is_file=True)
 #st.write(cf)
 #st.write(af)
 
@@ -34,7 +34,6 @@ col3.metric(label="Total Donations", value='{:,.0f}'.format(cf['num_donations'][
 #col3.metric(label="Total Unique Voters", value='{:,.0f}'.format(cf['unique_voters'][0] + af['unique_voters'][0] ))
 col2.metric(label="Number of Matching Pools Paid Out", value='{:,.0f}'.format(cf['num_rounds'][0] + af['num_rounds'][0]))
 
-round_df = utils.run_query_from_file('queries/get_round_stats.sql')
 #st.write(round_df)
 
 # Filter round_df where round_num is not null
