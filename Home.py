@@ -389,7 +389,7 @@ if program_option == 'GG21':
         st.subheader('🎉 Round Complete 🎉')
 
 col1, col2, col3 = st.columns(3)
-col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].sum())) 
+col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].apply(lambda x: round(x, -3)).sum())) 
 col1.metric('Total Donated', '${:,.0f}'.format(dfv['amountUSD'].sum()))
 col2.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
 col2.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
