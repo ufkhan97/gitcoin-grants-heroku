@@ -111,7 +111,6 @@ def load_round_data(program, csv_path='data/all_rounds.csv'):
     dfr = get_round_data()
     round_data = round_data[['program', 'type', 'round_number', 'round_id', 'chain_id']]
     dfr = pd.merge(dfr, round_data, on=['round_id', 'chain_id'], how='inner')
-    st.write(dfr)
     dfv_list = []
     dfp_list = []
 
