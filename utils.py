@@ -4,6 +4,8 @@ import psycopg2 as pg
 import os
 from typing import Union, Dict, List, Any
 from datetime import datetime, timezone
+import requests
+import re
 
 
 try:
@@ -132,9 +134,10 @@ def load_round_data(program, csv_path='data/all_rounds.csv'):
     dfp = dfp[dfp['status'] == 'APPROVED']
 
 
-    token_map = pd.read_csv('data/token_map.csv')
-    token_map['token'] = token_map['token'].str.lower()
-    dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token'])
+    token_map = fetch_tokens_config()
+    token_map = token_map[['chain_id', 'token_address', 'token_code']]
+    token_map['token_address'] = token_map['token_address'].str.lower()
+    dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token_address'])
 
 
     dfv['voter'] = dfv['voter'].str.lower()
@@ -165,4 +168,66 @@ def get_time_left(target_time):
         return f"0 days   0 hours   0 minutes"
     return f"{time_diff.days} days   {hours} hours   {minutes} minutes"
 
+def parse_config_file(file_content):
+    """Parse the config file content and extract token information."""
+    data = []
+    chain_pattern = re.compile(r'{\s*id:\s*(\d+),\s*name:\s*"([^"]+)",.*?tokens:\s*\[(.*?)\].*?}', re.DOTALL)
+    token_pattern = re.compile(r'code:\s*"(?P<code>[^"]+)".*?address:\s*"(?P<address>[^"]+)".*?decimals:\s*(?P<decimals>\d+).*?priceSource:\s*{\s*chainId:\s*(?P<price_source_chain_id>\d+).*?address:\s*"(?P<price_source_address>[^"]+)"', re.DOTALL)
+    chain_matches = chain_pattern.findall(file_content)
 
+    for chain_match in chain_matches:
+        chain_id = int(chain_match[0])
+        chain_name = chain_match[1]
+        token_data = chain_match[2]
+
+        token_matches = token_pattern.finditer(token_data)
+
+        for token_match in token_matches:
+            token_code = token_match.group('code')
+            token_address = token_match.group('address')
+            token_decimals = int(token_match.group('decimals'))
+            price_source_chain_id = int(token_match.group('price_source_chain_id'))
+            price_source_address = token_match.group('price_source_address')
+
+            data.append([
+                chain_id,
+                chain_name,
+                token_code,
+                token_address,
+                token_decimals,
+                price_source_chain_id,
+                price_source_address
+            ])
+
+    if data:
+        columns = [
+            'chain_id',
+            'chain_name',
+            'token_code',
+            'token_address',
+            'token_decimals',
+            'price_source_chain_id',
+            'price_source_address'
+        ]
+        df = pd.DataFrame(data, columns=columns)
+        df['token_address'] = df['token_address'].str.lower()
+        df['price_source_address'] = df['price_source_address'].str.lower()
+        return df
+    else:
+        print("No token data found in the file.")
+        return None
+    
+@st.cache_resource(ttl=36000) #10 hours
+def fetch_tokens_config():
+    """Fetch and parse the token configuration from the GitHub repository."""
+    url = 'https://raw.githubusercontent.com/gitcoinco/grants-stack-indexer/main/src/config.ts'
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an error for bad responses
+    except requests.RequestException as e:
+        print(f"Failed to fetch data from {url}. Error: {e}")
+        return None
+
+    df = parse_config_file(response.text)
+    return df
