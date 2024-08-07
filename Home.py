@@ -165,7 +165,7 @@ def create_project_highlights(dfv, dfp):
         for _, project in top_donors.iterrows():
             st.write(f"**{project['title']}**: {project['voter']:,}")
     with col3:
-        st.subheader("🚀 Trending (Last 24h)")
+        st.subheader("🚀 Trending (24h)")
         for _, project in top_trending.iterrows():
             st.write(f"**{project['title']}**")
 
