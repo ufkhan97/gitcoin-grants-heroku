@@ -92,7 +92,7 @@ def create_project_highlights(dfv, dfp):
     # Create visualization
     fig = go.Figure()
 
-    # Scatter plot for all projects
+    # Scatter plot for all projects with log scale
     fig.add_trace(go.Scatter(
         x=project_metrics['voter'],
         y=project_metrics['amountUSD'],
@@ -131,8 +131,8 @@ def create_project_highlights(dfv, dfp):
 
     fig.update_layout(
         #title=None,
-        xaxis_title="Unique Donors",
-        yaxis_title="Total Raised (USD)",
+        xaxis_title="Log. Unique Donors",
+        yaxis_title="Log. Total Raised (USD)",
         height=600,
         plot_bgcolor='white',
         xaxis=dict(
@@ -141,6 +141,7 @@ def create_project_highlights(dfv, dfp):
             linecolor='black',
             linewidth=2,
             showline=True,
+            type='log'
         ),
         yaxis=dict(
             showgrid=False,
@@ -148,6 +149,7 @@ def create_project_highlights(dfv, dfp):
             linecolor='black',
             linewidth=2,
             showline=True,
+            type='log'
         ),
         font=dict(family="monospace"),
     )
