@@ -220,7 +220,7 @@ def get_combined_donation_chart(dfv, starting_time, ending_time, color_map):
 @st.cache_data(ttl=3600)
 def generate_round_summary(dfv, dfp, dfr):
     # Use dfr for round information
-    round_summary = dfr[['round_name', 'amountUSD', 'uniqueContributors', 'match_amount_in_usd']]
+    round_summary = dfr[['round_name', 'amountUSD', 'uniqueContributors', 'match_amount_in_usd', 'chain_id', 'round_id']]
     round_summary = round_summary.rename(columns={
         'amountUSD': 'total_donated',
         'uniqueContributors': 'unique_donors',
@@ -255,7 +255,15 @@ def generate_round_summary(dfv, dfp, dfr):
     # Sort by total donated in descending order
     round_summary = round_summary.sort_values('total_donated', ascending=False)
     
+    # Create URLs for round_name
+    round_summary['round_url'] = round_summary.apply(
+        lambda row: f"https://explorer.gitcoin.co/#/round/{row['chain_id']}/{row['round_id']}", axis=1)
+    round_summary = round_summary.drop(columns=['chain_id', 'round_id'])
+    # reorder columns
+    round_summary = round_summary[['round_name', 'round_url', 'hourly_contributions', 'project_count', 'matching_pool', 'unique_donors', 'total_donated', 'crowdfunding_to_matching_ratio']]
     return round_summary
+
+
 
 @st.cache_resource(ttl=3600)
 def create_treemap(dfv):
@@ -419,16 +427,16 @@ st.dataframe(
     round_summary,
     column_config={
         "round_name": st.column_config.TextColumn("Round Name"),
+        "round_url": st.column_config.LinkColumn("Round URL", display_text="Visit"),
+        "hourly_contributions": st.column_config.LineChartColumn("Hourly Contributions"),
         "project_count": st.column_config.NumberColumn("Project Count", format="%d"),
         "matching_pool": st.column_config.NumberColumn("Matching Pool (USD)", format="$%.0f"),
         "unique_donors": st.column_config.NumberColumn("Unique Donors", format="%d"),
         "total_donated": st.column_config.NumberColumn("Total Donated", format="$%.2f"),
-        "crowdfunding_to_matching_ratio": st.column_config.TextColumn("Avg. Matching Multiple"),
-        "hourly_contributions": st.column_config.LineChartColumn("Hourly Contributions")
+        "crowdfunding_to_matching_ratio": st.column_config.TextColumn("Avg. Matching Multiple", width="small")
     },
     hide_index=True,
     height=38 + (len(round_summary) * 35)   # header_height + (num_rows * row_height) + padding
-
 )
 
 
