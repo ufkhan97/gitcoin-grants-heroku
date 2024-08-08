@@ -261,7 +261,7 @@ def generate_round_summary(dfv, dfp, dfr):
 def create_treemap(dfv):
     votes_by_voter_and_project = dfv.groupby(['voter_id', 'project_name'])['amountUSD'].sum().reset_index()
     votes_by_voter_and_project['voter_id'] = votes_by_voter_and_project['voter_id'].str[:10] + '...'
-    votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].str[:15] + '...'
+    votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].apply(lambda x: x if len(x) <= 15 else x[:15] + '...')
     
     fig = px.treemap(votes_by_voter_and_project, path=['shortened_title', 'voter_id'], values='amountUSD', hover_data=['project_name', 'amountUSD'])
     # Update hovertemplate to format the hover information
