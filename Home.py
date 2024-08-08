@@ -444,7 +444,7 @@ if dfp['round_id'].nunique() > 1:
     dfp['votes'] = dfp['votes'].astype(int)
     dfp['amountUSD'] = dfp['amountUSD'].astype(float)
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].sum()))
+    col1.metric('Matching Pool', '${:,.0f}'.format(round(dfr['match_amount_in_usd'].sum(), -3)))
     col2.metric('Total Donated', '${:,.0f}'.format(dfp['amountUSD'].sum()))
     col3.metric('Total Donations',  '{:,.0f}'.format(dfp['votes'].sum()))
     col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
