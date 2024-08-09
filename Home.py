@@ -40,6 +40,21 @@ def create_token_distribution_chart(dfv):
     total = token_data['amountUSD'].sum()
     token_data['percentage'] = token_data['amountUSD'] / total * 100
 
+    # Define color mapping for common tokens
+    token_colors = {
+        'ETH': '#627eea',
+        'OP': '#ff0420',
+        'USDC': '#2775ca',
+        'CELO': '#35d07f',
+        'USDGLO': '#ffcc00',
+        'ARB': '#28a0f0',
+        'GTC': '#ff6b6b',
+        'DAI': '#f4b731'
+    }
+    
+    # Assign colors to tokens, use a default color if not in the mapping
+    token_data['color'] = token_data['token_code'].map(token_colors).fillna('#cccccc')
+
     # Create the donut chart
     fig = go.Figure(data=[go.Pie(
         labels=token_data['token_code'],
@@ -47,7 +62,7 @@ def create_token_distribution_chart(dfv):
         hole=.4,
         textinfo='label+percent',
         hovertemplate="<b>%{label}</b><br>Amount: $%{value:.2f}<br>Percentage: %{percent}<extra></extra>",
-        marker=dict(colors=['#8e81f0', '#ff6b6b', '#feca57']),  # Adjust colors as needed
+        marker=dict(colors=token_data['color']),  # Use the mapped colors
     )])
 
     fig.update_layout(
