@@ -65,9 +65,19 @@ def create_token_distribution_chart(dfv):
         marker=dict(colors=token_data['color']),  # Use the mapped colors
     )])
 
+    # Format total amount with appropriate suffix (K, M, B)
+    if total >= 1e9:
+        total_formatted = f"${total/1e9:.1f}B"
+    elif total >= 1e6:
+        total_formatted = f"${total/1e6:.1f}M"
+    elif total >= 1e3:
+        total_formatted = f"${total/1e3:.1f}K"
+    else:
+        total_formatted = f"${total:.2f}"
+
     fig.update_layout(
         title="Contributions (in USD) by Token",
-        annotations=[dict(text='Total<br>$' + f"{total:.2f}", x=0.5, y=0.5, font_size=20, showarrow=False)],
+        annotations=[dict(text=f'Total<br>{total_formatted}', x=0.5, y=0.5, font_size=16, showarrow=False)],
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
