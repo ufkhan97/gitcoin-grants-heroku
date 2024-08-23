@@ -75,6 +75,7 @@ def create_token_distribution_chart(dfv):
     else:
         total_formatted = f"${total:.2f}"
 
+
     fig.update_layout(
         title="Contributions (in USD) by Token",
         annotations=[dict(text=f'Total<br>{total_formatted}', x=0.5, y=0.5, font_size=16, showarrow=False)],

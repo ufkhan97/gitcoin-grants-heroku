@@ -5,7 +5,7 @@ This project is a dashboard for visualizing Gitcoin Grants data.
 
 ## Features
 - **Interactive Graphs**: Made with Python Plotly & Streamlit.
-- **Real-Time Data**: Connects to Gitcoin's real-time Postgres DB through regendata.
+- **Real-Time Data**: Connects to Gitcoin's real-time Indexer Postgres DB through regendata.
 
 
 ## Contributing
