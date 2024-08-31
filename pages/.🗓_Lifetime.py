@@ -18,21 +18,22 @@ st.write('')
 
 
 cf = utils.run_query("queries/get_summary_stats.sql", is_file=True)
-af = utils.get_2024_stats()  # This calls the updated function in utils.py
 round_df = utils.run_query("queries/get_round_stats.sql", is_file=True)
-#st.write(cf)
-#st.write(af)
+st.subheader('Summary Stats')
+st.write(cf)
+st.subheader('Round Stats')
+st.write(round_df)
 
 last_updated = cf['last_donation'][0].strftime('%Y-%m-%d')
 
 col1, col2, col3 = st.columns(3)
-col1.metric(label="Funds Distributed", value='${:,.0f}'.format(cf['crowdfunded_usd'][0] + cf['matchingfunds'][0]  + af['crowdfunded_usd'][0] + af['matchingfunds'][0] + cf['bounties_distributed'][0] )) 
+col1.metric(label="Funds Distributed", value='${:,.0f}'.format(cf['crowdfunded_usd'][0] + cf['matchingfunds'][0]  + cf['bounties_distributed'][0] +cf['direct_grants_payouts'][0] + cf['other_gmv'][0] + cf['maci_crowdfunding'][0] )) 
 #col2.metric(label="Crowdfunding", value='${:,.0f}'.format(cf['crowdfunded_usd'][0] + af['crowdfunded_usd'][0]))
 #col3.metric(label="Matching Funding", value='${:,.0f}'.format(cf['matchingfunds'][0] + af['matchingfunds'][0]))
 #col1.metric(label="Total Unique Grants", value='{:,.0f}'.format(cf['unique_grantees'][0] + af['unique_grantees'][0]))
-col3.metric(label="Total Donations", value='{:,.0f}'.format(cf['num_donations'][0] + af['num_donations'][0]) )
+col3.metric(label="Total Donations", value='{:,.0f}'.format(cf['num_donations'][0]) )
 #col3.metric(label="Total Unique Voters", value='{:,.0f}'.format(cf['unique_voters'][0] + af['unique_voters'][0] ))
-col2.metric(label="Number of Matching Pools Paid Out", value='{:,.0f}'.format(cf['num_rounds'][0] + af['num_rounds'][0]))
+col2.metric(label="Number of Matching Pools Paid Out", value='{:,.0f}'.format(cf['num_rounds'][0]))
 
 #st.write(round_df)
 

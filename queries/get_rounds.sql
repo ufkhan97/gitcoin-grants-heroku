@@ -16,7 +16,7 @@ SELECT
     (r."round_metadata" #>> '{quadraticFundingConfig, minDonationThresholdAmount}')::double precision AS "min_donation_threshold_amount",
     (r."round_metadata" #>> '{quadraticFundingConfig, sybilDefense}')::text AS "sybilDefense"
 FROM
-    "chain_data_75"."rounds" AS r
+    experimental_views.rounds_local AS r
 WHERE
     "chain_id" != 11155111 -- DO NOT USE SEPOLIA
     AND "donations_end_time" <= '2030-01-01'

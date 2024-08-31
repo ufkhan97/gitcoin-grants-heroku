@@ -70,7 +70,7 @@ def get_round_votes(round_id, chain_id):
     return run_query(
         "queries/get_votes.sql",
         {"round_id": round_id, "chain_id": chain_id},
-        database="indexer",
+        database="grants",
         is_file=True
     )
 
@@ -79,21 +79,21 @@ def get_round_projects(round_id, chain_id):
     return run_query(
         "queries/get_projects.sql",
         {"round_id": round_id, "chain_id": chain_id},
-        database="indexer",
+        database="grants",
         is_file=True
     )
 
 def get_round_data():
     return run_query(
         "queries/get_rounds.sql",
-        database="indexer",
+        database="grants",
         is_file=True
     )
 
 @st.cache_resource(ttl=time_to_live)
 def get_2024_stats():
     return run_query(
-        "queries/2024_stats.sql",
+        "queries/get_2024_stats.sql",
         database="grants",
         is_file=True
     )
@@ -109,10 +109,12 @@ def add_round_options(dfr):
 def load_round_data(program, csv_path='data/all_rounds.csv'):
     round_data = pd.read_csv(csv_path)
     round_data = round_data[round_data['program'] == program]
+    round_data['round_id'] = round_data['round_id'].str.lower()
 
     dfr = get_round_data()
     round_data = round_data[['program', 'type', 'round_number', 'round_id', 'chain_id']]
     dfr = pd.merge(dfr, round_data, on=['round_id', 'chain_id'], how='inner')
+    st.write(dfr)
     dfv_list = []
     dfp_list = []
 

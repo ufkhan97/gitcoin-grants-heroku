@@ -20,8 +20,8 @@ SELECT
     d.amount_in_round_match_token,
     d.timestamp as "block_timestamp"
 FROM
-    "chain_data_75".donations d
-LEFT JOIN "chain_data_75".applications a 
+    experimental_views.donations_local d
+LEFT JOIN experimental_views.applications_local a 
   ON a.round_id = d.round_id 
   AND a.id = d.application_id 
   AND a.chain_id = d.chain_id
