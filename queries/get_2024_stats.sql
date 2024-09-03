@@ -3,7 +3,6 @@ SELECT
   SUM(CASE WHEN r."matching_distribution" IS NOT NULL THEN r."match_amount_in_usd" ELSE 0 END) AS matchingfunds,
   count(r."matching_distribution") as num_rounds,
   sum(r."total_donations_count") as num_donations
-  
   --count(distinct r."donor_address") as unique_voters,
   --count(distinct r."recipient_address") as unique_grantees
 FROM
