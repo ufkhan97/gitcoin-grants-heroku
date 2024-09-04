@@ -421,8 +421,8 @@ if program_option == 'GG21':
     st.write('')
     if time_left != '0 days   0 hours   0 minutes':
         st.write('⏰ Time Left: ' + time_left)
-    else:
-        st.subheader('🎉 Round Complete 🎉')
+    #else:
+        #st.subheader('🎉 Round Complete 🎉')
 
 col1, col2, col3 = st.columns(3)
 col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].apply(lambda x: round(x, -3)).sum())) 
