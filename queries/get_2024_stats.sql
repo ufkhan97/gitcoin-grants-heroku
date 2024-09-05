@@ -6,7 +6,7 @@ SELECT
   --count(distinct r."donor_address") as unique_voters,
   --count(distinct r."recipient_address") as unique_grantees
 FROM
-  experimental_views.rounds_local AS r
+  public.rounds AS r
 WHERE 
   r."donations_end_time" >= '2024-01-01'
   AND chain_id != 11155111;
