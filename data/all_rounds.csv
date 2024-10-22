@@ -1,4 +1,15 @@
 program,chain_id,round_id,type,chain_name,round_name,matching_pool,starting_time,ending_time,round_number
+GG22,42161,609,program,ARB,GG22 OSS - Developer Tooling and Libraries,300000,,,22
+GG22,42161,610,program,ARB,GG22 OSS - Web3 Infrastructure,300000,,,22
+GG22,42161,608,program,ARB,GG22 OSS - dApps and Apps,300000,,,22
+GG22,42161,611,program,ARB,GG22 OSS - Hackathon Alumni,100000,,,22
+GG22,42161,643,community,ARB,Land Regenerators,170000,,,22
+GG22,42161,642,community,ARB,ENS Ecosystem,70000,,,22
+GG22,42161,636,community,ARB,Allo Builders Advancement Round,25000,,,22
+GG22,42220,16,community,CELO,Regen Citizens Genesis,21000,,,22
+GG22,42220,18,community,CELO,BioFi Pathfinders 🌱,55000,,,22
+GG22,42161,646,community,ARB,Youth In Need,17500,,,22
+GG22,42161,641,community,ARB,Growing the Public Gardens,30000,,,22
 GG21,42220,11,ecosystem,CELO,Real World Builders on Celo,75000,,,21
 GG21,42161,389,ecosystem,ARB,GG21: Thriving Arbitrum Summer,150000,,,21
 GG21,10,44,community,OP,Asia Round,75000,,,21
@@ -10,8 +21,8 @@ GG21,42220,14,community,CELO,Regen Coordi-Nation,50000,,,21
 GG21,42161,387,community,ARB,DeSci Round GG21,39000,,,21
 GG21,42161,386,community,ARB,OpenCivics Collaborative Research Round,42000,,,21
 GG21,42161,388,community,ARB,Climate Solutions Round,250000,,,21
-GG20,42161,23,program,ARB,Hackathon Alumni,100000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,25,program,ARB,dApps & Apps,300000,4/23/2024 12:00,5/7/2024 23:59,20
+GG20,42161,23,program,ARB,Hackathon Alumni,100000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,24,community,ARB,ENS ,100000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,27,program,ARB,Developer Tooling,300000,4/23/2024 12:00,5/7/2024 23:59,20
 GG20,42161,26,program,ARB,Web3 Infrastructure,300000,4/23/2024 12:00:00,5/7/2024 23:59,20
