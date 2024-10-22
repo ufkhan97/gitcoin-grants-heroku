@@ -416,8 +416,8 @@ else:
     dfv, dfp, dfr, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
     data_load_state.text("")
 
-if program_option == 'GG21':
-    time_left = utils.get_time_left(pd.to_datetime('2024-08-21 23:59:59', utc=True))
+if program_option == 'GG22':
+    time_left = utils.get_time_left(pd.to_datetime('2024-11-06 23:59:00', utc=True))
     st.write('')
     if time_left != '0 days   0 hours   0 minutes':
         st.write('⏰ Time Left: ' + time_left)
@@ -436,72 +436,75 @@ starting_time = pd.to_datetime(dfr['donations_start_time'].min(), utc=True)
 ending_time = pd.to_datetime(dfr['donations_end_time'].max(), utc=True)
 color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
 
-col1, col2 = st.columns([2, 1])
-with col1:
-    st.plotly_chart(get_combined_donation_chart(dfv, starting_time, ending_time, color_map), use_container_width=True)
-with col2:
-    st.plotly_chart(create_token_distribution_chart(dfv), use_container_width=True)
+if dfv.empty:
+    st.warning("🚀 You're early! We don't have data for this program yet. Try selecting a different program or check back soon for exciting updates!")
+else:
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.plotly_chart(get_combined_donation_chart(dfv, starting_time, ending_time, color_map), use_container_width=True)
+    with col2:
+        st.plotly_chart(create_token_distribution_chart(dfv), use_container_width=True)
 
-st.header("Project Highlights")
-create_project_highlights(dfv, dfp)
-
-
-# Display round summary table with column configs
-round_summary = generate_round_summary(dfv, dfp, dfr)
-st.header("Rounds Summary")
-st.dataframe(
-    round_summary,
-    column_config={
-        "round_name": st.column_config.TextColumn("Round Name"),
-        "round_url": st.column_config.LinkColumn("Round URL", display_text="Visit"),
-        "hourly_contributions": st.column_config.LineChartColumn("Hourly Contributions"),
-        "project_count": st.column_config.NumberColumn("Project Count", format="%d"),
-        "matching_pool": st.column_config.NumberColumn("Matching Pool (USD)", format="$%.0f"),
-        "unique_donors": st.column_config.NumberColumn("Unique Donors", format="%d"),
-        "total_donated": st.column_config.NumberColumn("Total Donated", format="$%.2f"),
-        "crowdfunding_to_matching_ratio": st.column_config.TextColumn("Avg. Matching Multiple", width="small")
-    },
-    hide_index=True,
-    height=38 + (len(round_summary) * 35)   # header_height + (num_rows * row_height) + padding
-)
+    st.header("Project Highlights")
+    create_project_highlights(dfv, dfp)
 
 
-if dfp['round_id'].nunique() > 1:
-
-    st.title("Round Details")
-    # selectbox to select the round
-    option = st.selectbox(
-        'Select Round',
-        dfr['options'].unique())
-    option = option.split(' - ')[0]
-    dfv = dfv[dfv['round_name'] == option]
-    dfp = dfp[dfp['round_name'] == option]
-    dfr = dfr[dfr['round_name'] == option]
-    dfp['votes'] = dfp['votes'].astype(int)
-    dfp['amountUSD'] = dfp['amountUSD'].astype(float)
-    col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric('Matching Pool', '${:,.0f}'.format(round(dfr['match_amount_in_usd'].sum(), -3)))
-    col2.metric('Total Donated', '${:,.0f}'.format(dfp['amountUSD'].sum()))
-    col3.metric('Total Donations',  '{:,.0f}'.format(dfp['votes'].sum()))
-    col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
-    col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
-
-treemap_dfv = dfv[dfv['projectId'].isin(dfp['projectId'])].copy()
-st.plotly_chart(create_treemap(treemap_dfv), use_container_width=True)
-
-#df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
+    # Display round summary table with column configs
+    round_summary = generate_round_summary(dfv, dfp, dfr)
+    st.header("Rounds Summary")
+    st.dataframe(
+        round_summary,
+        column_config={
+            "round_name": st.column_config.TextColumn("Round Name"),
+            "round_url": st.column_config.LinkColumn("Round URL", display_text="Visit"),
+            "hourly_contributions": st.column_config.LineChartColumn("Hourly Contributions"),
+            "project_count": st.column_config.NumberColumn("Project Count", format="%d"),
+            "matching_pool": st.column_config.NumberColumn("Matching Pool (USD)", format="$%.0f"),
+            "unique_donors": st.column_config.NumberColumn("Unique Donors", format="%d"),
+            "total_donated": st.column_config.NumberColumn("Total Donated", format="$%.2f"),
+            "crowdfunding_to_matching_ratio": st.column_config.TextColumn("Avg. Matching Multiple", width="small")
+        },
+        hide_index=True,
+        height=38 + (len(round_summary) * 35)   # header_height + (num_rows * row_height) + padding
+    )
 
 
-st.write('## Grants Leaderboard')
-dfp['Project Link'] = 'https://explorer.gitcoin.co/#/round/' + dfp['chain_id'].astype(str) +'/' + dfp['round_id'].astype(str) + '/' + dfp['id'].astype(str)
-df_display = dfp[['title', 'unique_donors_count', 'amountUSD', 'Project Link']].sort_values('unique_donors_count', ascending=False)
-df_display.columns = ['Title', 'Donors', '$ Amount (USD)', 'Project Link']
-df_display['$ Amount (USD)'] = df_display['$ Amount (USD)'].round(2)
-df_display = df_display.reset_index(drop=True)
-df_display['Title'] = df_display.apply(lambda row: f'<a href="{row["Project Link"]}">{row["Title"]}</a>', axis=1)
-df_display = df_display.drop(columns=['Project Link'])
-df_html = df_display.to_html(escape=False, index=False)
-st.write(df_html, unsafe_allow_html=True)
+    if dfp['round_id'].nunique() > 1:
+
+        st.title("Round Details")
+        # selectbox to select the round
+        option = st.selectbox(
+            'Select Round',
+            dfr['options'].unique())
+        option = option.split(' - ')[0]
+        dfv = dfv[dfv['round_name'] == option]
+        dfp = dfp[dfp['round_name'] == option]
+        dfr = dfr[dfr['round_name'] == option]
+        dfp['votes'] = dfp['votes'].astype(int)
+        dfp['amountUSD'] = dfp['amountUSD'].astype(float)
+        col1, col2, col3, col4, col5 = st.columns(5)
+        col1.metric('Matching Pool', '${:,.0f}'.format(round(dfr['match_amount_in_usd'].sum(), -3)))
+        col2.metric('Total Donated', '${:,.0f}'.format(dfp['amountUSD'].sum()))
+        col3.metric('Total Donations',  '{:,.0f}'.format(dfp['votes'].sum()))
+        col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
+        col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
+
+    treemap_dfv = dfv[dfv['projectId'].isin(dfp['projectId'])].copy()
+    st.plotly_chart(create_treemap(treemap_dfv), use_container_width=True)
+
+    #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
 
 
-#create_project_spotlight(dfv, dfp)
+    st.write('## Grants Leaderboard')
+    dfp['Project Link'] = 'https://explorer.gitcoin.co/#/round/' + dfp['chain_id'].astype(str) +'/' + dfp['round_id'].astype(str) + '/' + dfp['id'].astype(str)
+    df_display = dfp[['title', 'unique_donors_count', 'amountUSD', 'Project Link']].sort_values('unique_donors_count', ascending=False)
+    df_display.columns = ['Title', 'Donors', '$ Amount (USD)', 'Project Link']
+    df_display['$ Amount (USD)'] = df_display['$ Amount (USD)'].round(2)
+    df_display = df_display.reset_index(drop=True)
+    df_display['Title'] = df_display.apply(lambda row: f'<a href="{row["Project Link"]}">{row["Title"]}</a>', axis=1)
+    df_display = df_display.drop(columns=['Project Link'])
+    df_html = df_display.to_html(escape=False, index=False)
+    st.write(df_html, unsafe_allow_html=True)
+
+
+    #create_project_spotlight(dfv, dfp)
