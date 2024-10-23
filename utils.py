@@ -99,7 +99,7 @@ def get_2024_stats():
     )
 
 def add_round_options(dfr):
-    dfr['options'] = dfr['round_name'] + ' - ' + dfr['type'].str.capitalize() + ' Round'
+    dfr['options'] = dfr['round_name'] + ' | ' + dfr['type'].str.capitalize() + ' Round'
     dfr['type'] = pd.Categorical(dfr['type'], categories=['program', 'ecosystem'], ordered=True)
     dfr = dfr.sort_values(by=['type', 'round_name'])
     return dfr
