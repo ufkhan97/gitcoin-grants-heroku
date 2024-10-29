@@ -1,4 +1,5 @@
 program,chain_id,round_id,type,chain_name,round_name,matching_pool,starting_time,ending_time,round_number
+GG22,42161,648,program,ARB,GG22: Crypto Advocacy,100000,,,22
 GG22,42161,609,program,ARB,GG22 OSS - Developer Tooling and Libraries,300000,,,22
 GG22,42161,610,program,ARB,GG22 OSS - Web3 Infrastructure,300000,,,22
 GG22,42161,608,program,ARB,GG22 OSS - dApps and Apps,300000,,,22
