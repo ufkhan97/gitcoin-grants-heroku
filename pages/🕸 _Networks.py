@@ -37,11 +37,11 @@ else:
     data_load_state.text("")
     
 
-# selectbox to select the round
+# After round selection
 option = st.selectbox(
     'Select Round',
     dfr['options'].unique())
-option = option.split(' - ')[0]
+option = option.split(' | ')[0]
 dfv = dfv[dfv['round_name'] == option]
 dfp = dfp[dfp['round_name'] == option]
 dfr = dfr[dfr['round_name'] == option]

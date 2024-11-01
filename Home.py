@@ -143,17 +143,6 @@ def create_project_highlights(dfv, dfp):
     top_donors = project_metrics.nlargest(3, 'voter')
     top_trending = project_metrics.nlargest(3, 'normalized_qf_score')
 
-    for df in [top_funded, top_donors, top_trending]:
-        fig.add_trace(go.Scatter(
-            x=df['voter'],
-            y=df['amountUSD'],
-            mode='markers+text',
-            marker=dict(size=20, symbol='star', color='#FF6B6B', line=dict(width=2, color='DarkSlateGrey')),
-            text=df['title'],
-            textposition="top center",
-            hoverinfo='skip',
-            showlegend=False
-        ))
 
     fig.update_layout(
         #title=None,
@@ -187,15 +176,15 @@ def create_project_highlights(dfv, dfp):
     with col1:
         st.subheader("🏆 Top Funded")
         for _, project in top_funded.iterrows():
-            st.write(f"**{project['title']}**: ${project['amountUSD']:,.2f}")
+            st.write(f"**{project['title'].strip()}**: ${project['amountUSD']:,.2f}")
     with col2:
         st.subheader("👥 Most Donors")
         for _, project in top_donors.iterrows():
-            st.write(f"**{project['title']}**: {project['voter']:,}")
+            st.write(f"**{project['title'].strip()}**: {project['voter']:,}")
     with col3:
         st.subheader("🚀 Trending (24h)")
         for _, project in top_trending.iterrows():
-            st.write(f"**{project['title']}**")
+            st.write(f"**{project['title'].strip()}**")
 
 def get_combined_donation_chart(dfv, starting_time, ending_time, color_map):
     # Prepare data (same as before)
