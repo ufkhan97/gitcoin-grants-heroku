@@ -31,14 +31,14 @@ def get_cumulative_amountUSD_time_series_chart(dfv, starting_time, ending_time, 
     fig.update_traces(hovertemplate='<b>Round:</b> %{fullData.name}<br><b>Time:</b> %{x}<br><b>Total Donations:</b> $%{y:,.2f}')
     return fig
 
-def create_token_distribution_chart(dfv):
-    # Group by token and sum the amountUSD
-    token_data = dfv.groupby('token_code')['amountUSD'].sum().reset_index()
-    token_data = token_data.sort_values('amountUSD', ascending=False)
+def create_token_distribution_chart(hourly_contributions):
+    # Group by token and sum the total_amount
+    token_data = hourly_contributions.groupby('token_code')['total_amount'].sum().reset_index()
+    token_data = token_data.sort_values('total_amount', ascending=False)
     
     # Calculate percentages
-    total = token_data['amountUSD'].sum()
-    token_data['percentage'] = token_data['amountUSD'] / total * 100
+    total = token_data['total_amount'].sum()
+    token_data['percentage'] = token_data['total_amount'] / total * 100
 
     # Define color mapping for common tokens
     token_colors = {
@@ -49,7 +49,8 @@ def create_token_distribution_chart(dfv):
         'USDGLO': '#ffcc00',
         'ARB': '#28a0f0',
         'GTC': '#ff6b6b',
-        'DAI': '#f4b731'
+        'DAI': '#f4b731',
+        'MATIC': '#8247e5'
     }
     
     # Assign colors to tokens, use a default color if not in the mapping
@@ -58,7 +59,7 @@ def create_token_distribution_chart(dfv):
     # Create the donut chart
     fig = go.Figure(data=[go.Pie(
         labels=token_data['token_code'],
-        values=token_data['amountUSD'],
+        values=token_data['total_amount'],
         hole=.4,
         textinfo='label+percent',
         hovertemplate="<b>%{label}</b><br>Amount: $%{value:.2f}<br>Percentage: %{percent}<extra></extra>",
@@ -75,7 +76,6 @@ def create_token_distribution_chart(dfv):
     else:
         total_formatted = f"${total:.2f}"
 
-
     fig.update_layout(
         title="Contributions (in USD) by Token",
         annotations=[dict(text=f'Total<br>{total_formatted}', x=0.5, y=0.5, font_size=16, showarrow=False)],
@@ -88,60 +88,37 @@ def create_token_distribution_chart(dfv):
 def calculate_qf_score(donations):
     return (np.sum(np.sqrt(donations)))**2
 
-def create_project_highlights(dfv, dfp):
-
-    # Prepare data (same as before)
-    project_metrics = dfv.groupby('projectId').agg({
-        'amountUSD': 'sum',
-        'voter': 'nunique',
-        'id': 'count'
-    }).reset_index()
-
-    project_metrics = project_metrics.merge(dfp[['projectId', 'title']], on='projectId', how='left').drop_duplicates(subset=['title'])
-
-    # Calculate trending score based on quadratic funding in the last 24 hours
-    last_24h = dfv['block_timestamp'].max() - pd.Timedelta(hours=24)
-    recent_dfv = dfv[dfv['block_timestamp'] > last_24h]
-    
-    trending = recent_dfv.groupby('projectId').agg({
-        'amountUSD': lambda x: calculate_qf_score(x),
-        'voter': 'nunique'
-    }).reset_index()
-    trending.columns = ['projectId', 'qf_score', 'recent_donors']
-    project_metrics = project_metrics.merge(trending, on='projectId', how='left')
-    project_metrics['qf_score'] = project_metrics['qf_score'].fillna(0)
-    
-    # Normalize QF score
-    max_qf_score = project_metrics['qf_score'].max()
-    project_metrics['normalized_qf_score'] = project_metrics['qf_score'] / max_qf_score if max_qf_score > 0 else 0
+def create_project_highlights(dfp):
+    dfp['average_donation'] = dfp['amountUSD'] / dfp['votes']
 
     # Create visualization
     fig = go.Figure()
 
     # Scatter plot for all projects with log scale
     fig.add_trace(go.Scatter(
-        x=project_metrics['voter'],
-        y=project_metrics['amountUSD'],
+        x=dfp['votes'],
+        y=dfp['amountUSD'],
         mode='markers',
         marker=dict(
-            size=project_metrics['id'],
+            size=dfp['votes'],
             sizemode='area',
-            sizeref=2.*max(project_metrics['id'])/(40.**2),
+            sizeref=2.*max(dfp['votes'])/(25.**2),
             sizemin=4,
             color='#8e81f0',
             opacity=0.7
         ),
-        text=project_metrics['title'],
+        text=dfp['title'],
         hovertemplate="<b>%{text}</b><br>" +
                       "Total Raised: $%{y:,.2f}<br>" +
-                      "Unique Donors: %{x}<br>",
+                      "Unique Donors: %{x}<br>" +
+                      "<extra></extra>",
         showlegend=False  
     ))
 
     # Highlight top projects
-    top_funded = project_metrics.nlargest(3, 'amountUSD')
-    top_donors = project_metrics.nlargest(3, 'voter')
-    top_trending = project_metrics.nlargest(3, 'normalized_qf_score')
+    top_funded = dfp.nlargest(3, 'amountUSD')
+    top_donors = dfp.nlargest(3, 'votes')
+    top_trending = dfp.nlargest(3, 'average_donation')
 
 
     fig.update_layout(
@@ -180,36 +157,46 @@ def create_project_highlights(dfv, dfp):
     with col2:
         st.subheader("👥 Most Donors")
         for _, project in top_donors.iterrows():
-            st.write(f"**{project['title'].strip()}**: {project['voter']:,}")
+            st.write(f"**{project['title'].strip()}**: {project['votes']:,}")
     with col3:
-        st.subheader("🚀 Trending (24h)")
+        st.subheader("💪🏾 Highest Average")
         for _, project in top_trending.iterrows():
-            st.write(f"**{project['title'].strip()}**")
+            st.write(f"**{project['title'].strip()}**: ${project['average_donation']:,.2f}")
 
-def get_combined_donation_chart(dfv, starting_time, ending_time, color_map):
-    # Prepare data (same as before)
-    dfv_count = dfv.groupby([dfv['block_timestamp'].dt.floor('H')])['id'].nunique().reset_index()
-    dfv_count.set_index('block_timestamp', inplace=True)
-    dfv_count = dfv_count.reindex(pd.date_range(start=dfv_count.index.min(), end=dfv_count.index.max(), freq='H'), fill_value=0)
+def get_combined_donation_chart(hourly_contributions, starting_time, ending_time, color_map):
+    # Aggregate all tokens and chains by hour
+    hourly_totals = hourly_contributions.groupby('hour')['total_amount'].sum().reset_index()
     
-    dfv_grouped = dfv.groupby([dfv['block_timestamp'].dt.floor('H')])['amountUSD'].sum().cumsum().reset_index()
-    
+    # Calculate cumulative sum
+    cumulative_totals = hourly_totals.copy()
+    cumulative_totals['total_amount'] = cumulative_totals['total_amount'].cumsum()
+
     # Create figure with secondary y-axis
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     
-    # Add traces
+    # Add hourly bars
     fig.add_trace(
-        go.Bar(x=dfv_count.index, y=dfv_count['id'], name="Hourly Contributions", marker_color='#8e81f0'),
+        go.Bar(
+            x=hourly_totals['hour'], 
+            y=hourly_totals['total_amount'], 
+            name="Hourly Contributions", 
+            marker_color='#8e81f0'
+        ),
         secondary_y=False,
     )
     
+    # Add cumulative line
     fig.add_trace(
-        go.Scatter(x=dfv_grouped['block_timestamp'], y=dfv_grouped['amountUSD'], 
-                   name="Cumulative Donations", line=dict(color='#000000', width=2)),
+        go.Scatter(
+            x=cumulative_totals['hour'], 
+            y=cumulative_totals['total_amount'],
+            name="Cumulative Donations", 
+            line=dict(color='#000000', width=2)
+        ),
         secondary_y=True,
     )
     
-    # Update layout to match the theme
+    # Update layout
     fig.update_layout(
         title="Hourly Contributions and Cumulative Donations",
         font=dict(family="monospace", size=12),
@@ -222,19 +209,19 @@ def get_combined_donation_chart(dfv, starting_time, ending_time, color_map):
         ),
         yaxis=dict(gridcolor='#ffffff'),
         yaxis2=dict(gridcolor='#ffffff'),
-        height = 550
+        height=550
     )
     
     # Set axis titles and range
-    fig.update_xaxes(title_text="Time", range=[starting_time, min(ending_time, dfv['block_timestamp'].max())])
-    fig.update_yaxes(title_text="Number of Contributions", secondary_y=False)
+    fig.update_xaxes(title_text="Time", range=[starting_time, min(ending_time, hourly_totals['hour'].max())])
+    fig.update_yaxes(title_text="Hourly Donations (USD)", secondary_y=False)
     fig.update_yaxes(title_text="Cumulative Donations (USD)", secondary_y=True, tickprefix="$", tickformat=",.0f")
     
     return fig
 
 @st.cache_data(ttl=3600)
-def generate_round_summary(dfv, dfp, dfr):
-    # Use dfr for round information
+def generate_round_summary(hourly_contributions, dfp, dfr):
+    # Initialize round summary with basic metrics
     round_summary = dfr[['round_name', 'amountUSD', 'uniqueContributors', 'match_amount_in_usd', 'chain_id', 'round_id']]
     round_summary = round_summary.rename(columns={
         'amountUSD': 'total_donated',
@@ -242,47 +229,62 @@ def generate_round_summary(dfv, dfp, dfr):
         'match_amount_in_usd': 'matching_pool'
     })
     
-    # Get project count from dfp
+    # Get project count per round
     project_count = dfp.groupby('round_name')['projectId'].nunique().reset_index()
     project_count.columns = ['round_name', 'project_count']
+    
+    # Round matching pool to nearest thousand
     round_summary['matching_pool'] = round_summary['matching_pool'].round(-3)
     
     # Merge project count with round summary
     round_summary = pd.merge(round_summary, project_count, on='round_name')
     
-    # Calculate the ratio of crowdfunding to matching funding
+    # Calculate matching ratio
     round_summary['crowdfunding_to_matching_ratio'] = round_summary.apply(
-        lambda row: f"{row['matching_pool']/(row['total_donated']  ) if row['total_donated'] != 0 else row['matching_pool']:.1f}x", axis=1)
-    
-    # Generate hourly contribution data
-    def create_hourly_contributions(group):
-        timestamps = pd.to_datetime(group['block_timestamp'])
-        hourly_counts = timestamps.dt.floor('H').value_counts().sort_index()
-        hourly_counts = hourly_counts.reindex(pd.date_range(start=hourly_counts.index.min(), 
-                                                            end=hourly_counts.index.max(), 
-                                                            freq='H'), 
-                                              fill_value=0)
-        return pd.Series({'hourly_contributions': hourly_counts.tolist()})
+        lambda row: f"{row['matching_pool']/(row['total_donated'] if row['total_donated'] != 0 else row['matching_pool']):.1f}x",
+        axis=1
+    )
 
-    time_series = dfv.groupby('round_name').apply(create_hourly_contributions).reset_index()
-    round_summary = pd.merge(round_summary, time_series, on='round_name', how='left')
+    # Process hourly contributions
+    hourly_data = hourly_contributions.groupby(['chain_id', 'round_id', 'hour'])['total_amount'].sum().reset_index()
     
-    # Sort by total donated in descending order
+    # Create time series for each round
+    hourly_series = {}
+    for chain_id, round_id in zip(hourly_data['chain_id'], hourly_data['round_id']):
+        mask = (hourly_data['chain_id'] == chain_id) & (hourly_data['round_id'] == round_id)
+        hourly_series[(chain_id, round_id)] = hourly_data[mask]['total_amount'].tolist()
+    
+    # Add hourly series to round summary
+    round_summary['hourly_contributions'] = round_summary.apply(
+        lambda row: hourly_series.get((row['chain_id'], row['round_id']), []),
+        axis=1
+    )
+    
+    # Create round URLs
+    round_summary['round_url'] = round_summary.apply(
+        lambda row: f"https://explorer.gitcoin.co/#/round/{row['chain_id']}/{row['round_id']}", 
+        axis=1
+    )
+    
+    # Sort by total donated
     round_summary = round_summary.sort_values('total_donated', ascending=False)
     
-    # Create URLs for round_name
-    round_summary['round_url'] = round_summary.apply(
-        lambda row: f"https://explorer.gitcoin.co/#/round/{row['chain_id']}/{row['round_id']}", axis=1)
-    round_summary = round_summary.drop(columns=['chain_id', 'round_id'])
-    # reorder columns
-    round_summary = round_summary[['round_name', 'round_url', 'hourly_contributions', 'project_count', 'matching_pool', 'unique_donors', 'total_donated', 'crowdfunding_to_matching_ratio']]
+    # Select and order final columns
+    round_summary = round_summary[[
+        'round_name',
+        'crowdfunding_to_matching_ratio',
+        'round_url',
+        'hourly_contributions',
+        'project_count',
+        'matching_pool',
+        'unique_donors',
+        'total_donated',
+    ]]
+    
     return round_summary
 
-
-
 @st.cache_resource(ttl=3600)
-def create_treemap(dfv):
-    votes_by_voter_and_project = dfv.groupby(['voter_id', 'project_name'])['amountUSD'].sum().reset_index()
+def create_treemap(votes_by_voter_and_project):
     votes_by_voter_and_project['voter_id'] = votes_by_voter_and_project['voter_id'].str[:10] + '...'
     votes_by_voter_and_project['shortened_title'] = votes_by_voter_and_project['project_name'].apply(lambda x: x if len(x) <= 15 else x[:15] + '...')
     
@@ -386,8 +388,8 @@ st.image('assets/657c7ed16b14af693c08b92d_GTC-Logotype-Dark.png', width = 200)
 st.write('')
 st.write('This page highlights some of the key metrics and insights from the recent Gitcoin Grants Programs. Select a program below to get started!')
 
-program_data = pd.read_csv("data/all_rounds.csv")
-program_option = st.selectbox( 'Select Program', program_data['program'].unique())
+dfr = utils.get_round_data()
+program_option = st.selectbox( 'Select Program', dfr['program'].unique())
 st.header(program_option + ' Summary')
 
 if "program_option" in st.session_state and st.session_state.program_option != program_option:
@@ -396,13 +398,14 @@ st.session_state.program_option = program_option
 
 
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
-    dfv = st.session_state.dfv
     dfp = st.session_state.dfp
     dfr = st.session_state.dfr
-    round_data = st.session_state.round_data
+    unique_donors = st.session_state.unique_donors
+    hourly_contributions = st.session_state.hourly_contributions
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, dfr, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
+    dfp, dfr, unique_donors, hourly_contributions = utils.load_round_data(program_option, dfr)
+        # WE HERE RIGHT NOW
     data_load_state.text("")
 
 if program_option == 'GG22':
@@ -415,9 +418,9 @@ if program_option == 'GG22':
 
 col1, col2, col3 = st.columns(3)
 col1.metric('Matching Pool', '${:,.0f}'.format(dfr['match_amount_in_usd'].apply(lambda x: round(x, -3)).sum())) 
-col1.metric('Total Donated', '${:,.0f}'.format(dfv['amountUSD'].sum()))
-col2.metric("Total Donations", '{:,.0f}'.format(dfp['votes'].sum()))
-col2.metric('Unique Donors', '{:,.0f}'.format(dfv['voter'].nunique()))
+col1.metric('Total Donated', '${:,.0f}'.format(dfr['amountUSD'].sum()))
+col2.metric("Total Donations", '{:,.0f}'.format(dfr['votes'].sum()))
+col2.metric('Unique Donors', '{:,.0f}'.format(unique_donors['count'].iloc[0]))
 col3.metric('Total Rounds', '{:,.0f}'.format(dfr.shape[0]))
 col3.metric('Total Projects', '{:,.0f}'.format(len(dfp)))
     
@@ -425,33 +428,33 @@ starting_time = pd.to_datetime(dfr['donations_start_time'].min(), utc=True)
 ending_time = pd.to_datetime(dfr['donations_end_time'].max(), utc=True)
 color_map = dict(zip(dfp['round_name'].unique(), px.colors.qualitative.Pastel))
 
-if dfv.empty:
+if dfr['amountUSD'].sum() < 1000:
     st.warning("🚀 You're early! We don't have data for this program yet. Try selecting a different program or check back soon for exciting updates!")
 else:
     col1, col2 = st.columns([2, 1])
     with col1:
-        st.plotly_chart(get_combined_donation_chart(dfv, starting_time, ending_time, color_map), use_container_width=True)
+        st.plotly_chart(get_combined_donation_chart(hourly_contributions, starting_time, ending_time, color_map), use_container_width=True)
     with col2:
-        st.plotly_chart(create_token_distribution_chart(dfv), use_container_width=True)
+        st.plotly_chart(create_token_distribution_chart(hourly_contributions), use_container_width=True)
 
     st.header("Project Highlights")
-    create_project_highlights(dfv, dfp)
+    create_project_highlights(dfp)
 
 
     # Display round summary table with column configs
-    round_summary = generate_round_summary(dfv, dfp, dfr)
+    round_summary = generate_round_summary(hourly_contributions, dfp, dfr)
     st.header("Rounds Summary")
     st.dataframe(
         round_summary,
         column_config={
             "round_name": st.column_config.TextColumn("Round Name"),
+            "crowdfunding_to_matching_ratio": st.column_config.TextColumn("Match Multiple (Avg.)", width="small"),
             "round_url": st.column_config.LinkColumn("Round URL", display_text="Visit"),
             "hourly_contributions": st.column_config.LineChartColumn("Hourly Contributions"),
             "project_count": st.column_config.NumberColumn("Project Count", format="%d"),
             "matching_pool": st.column_config.NumberColumn("Matching Pool (USD)", format="$%.0f"),
             "unique_donors": st.column_config.NumberColumn("Unique Donors", format="%d"),
-            "total_donated": st.column_config.NumberColumn("Total Donated", format="$%.2f"),
-            "crowdfunding_to_matching_ratio": st.column_config.TextColumn("Avg. Matching Multiple", width="small")
+            "total_donated": st.column_config.NumberColumn("Total Donated", format="$%.2f")
         },
         hide_index=True,
         height=38 + (len(round_summary) * 35)   # header_height + (num_rows * row_height) + padding
@@ -466,9 +469,10 @@ else:
             'Select Round',
             dfr['options'].unique())
         option = option.split(' | ')[0]
-        dfv = dfv[dfv['round_name'] == option]
         dfp = dfp[dfp['round_name'] == option]
         dfr = dfr[dfr['round_name'] == option]
+        round_chain_pairs = [(str(dfr.iloc[0]['round_id']).lower(), str(dfr.iloc[0]['chain_id']))]
+        dfv = utils.get_voters_by_project(round_chain_pairs)
         dfp['votes'] = dfp['votes'].astype(int)
         dfp['amountUSD'] = dfp['amountUSD'].astype(float)
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -478,7 +482,7 @@ else:
         col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
         col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
 
-    treemap_dfv = dfv[dfv['projectId'].isin(dfp['projectId'])].copy()
+    treemap_dfv = dfv[dfv['project_name'].isin(dfp['title'])]
     st.plotly_chart(create_treemap(treemap_dfv), use_container_width=True)
 
     #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')

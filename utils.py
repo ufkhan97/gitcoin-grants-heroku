@@ -64,110 +64,6 @@ def run_query(query, params=None, database='grants', is_file=False):
     except pg.Error as e:
         st.error(f"Database error: {e}")
         return pd.DataFrame()  # Return empty DataFrame on error
-    
-@st.cache_resource(ttl=time_to_live)
-def get_round_votes(round_id, chain_id):
-    return run_query(
-        "queries/get_votes.sql",
-        {"round_id": round_id, "chain_id": chain_id},
-        database="grants",
-        is_file=True
-    )
-
-@st.cache_resource(ttl=time_to_live)
-def get_round_projects(round_id, chain_id):
-    return run_query(
-        "queries/get_projects.sql",
-        {"round_id": round_id, "chain_id": chain_id},
-        database="grants",
-        is_file=True
-    )
-
-def get_round_data():
-    return run_query(
-        "queries/get_rounds.sql",
-        database="grants",
-        is_file=True
-    )
-
-@st.cache_resource(ttl=time_to_live)
-def get_2024_stats():
-    return run_query(
-        "queries/get_2024_stats.sql",
-        database="grants",
-        is_file=True
-    )
-
-def add_round_options(dfr):
-    dfr['options'] = dfr['round_name'] + ' | ' + dfr['type'].str.capitalize() + ' Round'
-    dfr['type'] = pd.Categorical(dfr['type'], categories=['program', 'ecosystem'], ordered=True)
-    dfr = dfr.sort_values(by=['type', 'round_name'])
-    return dfr
-
-
-@st.cache_resource(ttl=time_to_live)
-def load_round_data(program, csv_path='data/all_rounds.csv'):
-    round_data = pd.read_csv(csv_path)
-    round_data = round_data[round_data['program'] == program]
-    round_data['round_id'] = round_data['round_id'].str.lower()
-
-    dfr = get_round_data()
-    round_data = round_data[['program', 'type', 'round_number', 'round_id', 'chain_id']]
-    dfr = pd.merge(dfr, round_data, on=['round_id', 'chain_id'], how='inner')
-    dfv_list = []
-    dfp_list = []
-
-    for _, row in dfr.iterrows():
-        round_id = str(row['round_id']).lower()
-        dfp = get_round_projects(round_id, row['chain_id'])
-        dfv = get_round_votes(round_id, row['chain_id'])
-        dfp['round_id'] = row['round_id']
-        dfp['chain_id'] = row['chain_id']
-        dfp['round_name'] = row['round_name']
-        dfv['round_id'] = row['round_id']
-        dfv['chain_id'] = row['chain_id']
-        dfv['round_name'] = row['round_name']
-        dfv_list.append(dfv)
-        dfp_list.append(dfp)
-
-    dfv = pd.concat(dfv_list)
-    dfp = pd.concat(dfp_list)
-    dfp = dfp[dfp['status'] == 'APPROVED']
-
-
-    token_map = fetch_tokens_config()
-    token_map = token_map[['chain_id', 'token_address', 'token_code']]
-    token_map['token_address'] = token_map['token_address'].str.lower()
-    dfv = pd.merge(dfv, token_map, how='left', left_on=['chain_id','token'], right_on=['chain_id','token_address'])
-
-
-    dfv['voter'] = dfv['voter'].str.lower()
-    dfv = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
-    
-    df_ens = pd.read_csv('data/ens.csv')
-    df_ens['address'] = df_ens['address'].str.lower()
-    
-    dfv = pd.merge(dfv, df_ens, how='left', left_on='voter', right_on='address')
-    dfv['voter_id'] = dfv['name'].fillna(dfv['voter'])
-    # drop duplicates
-    dfv = dfv.drop_duplicates()
-    dfr = add_round_options(dfr)
-    st.session_state.dfv = dfv
-    st.session_state.dfp = dfp
-    st.session_state.dfr = dfr
-    st.session_state.round_data = round_data
-    st.session_state.data_loaded = True
-
-    return dfv, dfp,  dfr, round_data
-
-def get_time_left(target_time):
-    now = datetime.now(timezone.utc)
-    time_diff = target_time - now
-    hours, remainder = divmod(time_diff.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    if time_diff.days < 0:
-        return f"0 days   0 hours   0 minutes"
-    return f"{time_diff.days} days   {hours} hours   {minutes} minutes"
 
 def parse_config_file(file_content):
     """Parse the config file content and extract token information."""
@@ -232,3 +128,194 @@ def fetch_tokens_config():
 
     df = parse_config_file(response.text)
     return df
+
+
+@st.cache_resource(ttl=time_to_live)
+def get_voters_by_project(round_chain_pairs):
+    if not round_chain_pairs:
+        st.error("No round_chain_pairs provided.")
+        return pd.DataFrame()  # Return an empty DataFrame if no pairs are provided
+
+    # Prepare the round_chain_pairs for the SQL query
+    round_ids = ', '.join(f"'{pair[0]}'" for pair in round_chain_pairs)
+    chain_ids = ', '.join(f"'{pair[1]}'" for pair in round_chain_pairs)
+
+    # Construct the SQL query with the formatted pairs
+    query = f"""
+    WITH round_chain_pairs AS (
+        SELECT 
+            unnest(ARRAY[{round_ids}]::text[]) AS round_id,
+            unnest(ARRAY[{chain_ids}]::text[]) AS chain_id
+    )
+    SELECT
+        (a.metadata->'application'->'project'->>'title') AS "project_name",
+        d.donor_address AS "voter",
+        ens.name AS "ens_name",
+        coalesce(ens.name, d.donor_address) AS "voter_id",
+        sum(d.amount_in_usd) AS "amountUSD"
+    FROM
+        public.donations d
+    JOIN round_chain_pairs rcp 
+        ON d.round_id::text = rcp.round_id 
+        AND d.chain_id::text = rcp.chain_id
+    LEFT JOIN public.applications a 
+        ON a.round_id = d.round_id 
+        AND a.id = d.application_id 
+        AND a.chain_id = d.chain_id
+    LEFT JOIN   "experimental_views"."ens_names_allo_donors_20241022231136" ens
+        ON d.donor_address = ens.address
+    GROUP BY 1, 2, 3, 4
+    """
+
+    return run_query(query, database='grants', is_file=False)
+
+@st.cache_resource(ttl=time_to_live)
+def get_projects(round_chain_pairs):
+    if not round_chain_pairs:
+        st.error("No round_chain_pairs provided.")
+        return pd.DataFrame()  # Return an empty DataFrame if no pairs are provided
+
+    # Prepare the round_chain_pairs for the SQL query
+    round_ids = ', '.join(f"'{pair[0]}'" for pair in round_chain_pairs)
+    chain_ids = ', '.join(f"'{pair[1]}'" for pair in round_chain_pairs)
+
+    # Construct the SQL query with the formatted pairs
+    query = f"""
+    WITH round_chain_pairs AS (
+        SELECT 
+            unnest(ARRAY[{round_ids}]::text[]) AS round_id,
+            unnest(ARRAY[{chain_ids}]::text[]) AS chain_id
+    )
+    SELECT 
+        a.id AS application_id,
+        (a.metadata->'application'->'project'->>'title') AS title,
+        (a.metadata->'application'->>'recipient') AS recipient_address,
+        (r."round_metadata" #>> '{{name}}')::text AS "round_name",
+        a.chain_id::text,
+        a.round_id::text,
+        a.project_id AS "projectId",
+        a.status,
+        a.total_donations_count AS votes,
+        a.total_amount_donated_in_usd AS "amountUSD",
+        a.unique_donors_count
+    FROM 
+        public.applications AS a
+    LEFT JOIN rounds r ON a.round_id = r.id AND a.chain_id = r.chain_id
+    JOIN 
+        round_chain_pairs rcp 
+        ON a.round_id::text = rcp.round_id 
+        AND a.chain_id::text = rcp.chain_id
+    WHERE 
+        a.status = 'APPROVED';
+    """
+
+    return run_query(query, database='grants', is_file=False)
+
+def get_unique_donors(round_chain_pairs):
+    round_ids = ', '.join(f"'{pair[0]}'" for pair in round_chain_pairs)
+    chain_ids = ', '.join(f"'{pair[1]}'" for pair in round_chain_pairs)
+
+    query = f"""
+    WITH round_chain_pairs AS (
+        SELECT 
+            unnest(ARRAY[{round_ids}]::text[]) AS round_id,
+            unnest(ARRAY[{chain_ids}]::text[]) AS chain_id
+    )
+    SELECT 
+        count(distinct donor_address)
+    FROM 
+        public.donations AS d
+    JOIN 
+        round_chain_pairs rcp 
+        ON d.round_id::text = rcp.round_id 
+        AND d.chain_id::text = rcp.chain_id
+    """
+    return run_query(query, database='grants', is_file=False)
+
+def get_hourly_contributions(round_chain_pairs):
+    round_ids = ', '.join([f"'{pair[0]}'" for pair in round_chain_pairs])
+    chain_ids = ', '.join([f"'{pair[1]}'" for pair in round_chain_pairs])
+
+    query = f"""
+    WITH round_chain_pairs AS (
+        SELECT 
+            unnest(ARRAY[{round_ids}]::text[]) AS round_id,
+            unnest(ARRAY[{chain_ids}]::text[]) AS chain_id
+    )
+    SELECT 
+        date_trunc('hour', timestamp) AS hour,
+        d.chain_id,
+        d.round_id,
+        token_address,
+        SUM(amount_in_usd) AS total_amount
+    FROM 
+        public.donations AS d
+    JOIN 
+        round_chain_pairs rcp 
+        ON d.round_id::text = rcp.round_id 
+        AND d.chain_id::text = rcp.chain_id
+    GROUP BY 1, 2, 3, 4
+    ORDER BY 1, 2, 3, 4
+    """
+
+    token_map = fetch_tokens_config()
+    token_map = token_map[['chain_id', 'token_address', 'token_code']]
+    token_map['token_address'] = token_map['token_address'].str.lower()
+
+    dfh = run_query(query, database='grants', is_file=False)
+    dfh = pd.merge(dfh, token_map, how='left', left_on=['chain_id', 'token_address'], right_on=['chain_id', 'token_address'])
+    return dfh
+
+
+
+def get_round_data():
+    return run_query(
+        "queries/get_rounds.sql",
+        database="grants",
+        is_file=True
+    )
+
+@st.cache_resource(ttl=time_to_live)
+def get_2024_stats():
+    return run_query(
+        "queries/get_2024_stats.sql",
+        database="grants",
+        is_file=True
+    )
+
+def add_round_options(dfr):
+    dfr['options'] = dfr['round_name'] + ' | ' + dfr['type'].str.capitalize() + ' Round'
+    dfr['type'] = pd.Categorical(dfr['type'], categories=['program', 'ecosystem'], ordered=True)
+    dfr = dfr.sort_values(by=['type', 'round_name'])
+    return dfr
+
+
+@st.cache_resource(ttl=time_to_live)
+def load_round_data(program, dfr):
+    dfr = dfr[dfr['program'] == program]
+    # Create list of (round_id, chain_id) pairs
+    round_chain_pairs = [
+        (str(row['round_id']).lower(), str(row['chain_id'])) 
+        for _, row in dfr.iterrows()
+    ]
+    unique_donors = get_unique_donors(round_chain_pairs)
+    hourly_contributions = get_hourly_contributions(round_chain_pairs)
+    dfp = get_projects(round_chain_pairs)
+    dfr = add_round_options(dfr)
+    st.session_state.dfp = dfp
+    st.session_state.dfr = dfr
+    st.session_state.unique_donors = unique_donors
+    st.session_state.hourly_contributions = hourly_contributions
+    st.session_state.data_loaded = True
+
+    return dfp, dfr, unique_donors, hourly_contributions
+
+def get_time_left(target_time):
+    now = datetime.now(timezone.utc)
+    time_diff = target_time - now
+    hours, remainder = divmod(time_diff.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if time_diff.days < 0:
+        return f"0 days   0 hours   0 minutes"
+    return f"{time_diff.days} days   {hours} hours   {minutes} minutes"
+

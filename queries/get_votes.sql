@@ -25,7 +25,5 @@ LEFT JOIN public.applications a
   ON a.round_id = d.round_id 
   AND a.id = d.application_id 
   AND a.chain_id = d.chain_id
---AND a.status = 'APPROVED'
 WHERE 
-    a.round_id = %(round_id)s 
-    AND a.chain_id = '%(chain_id)s'
+    (a.round_id, a.chain_id) = ANY (%(round_chain_pairs)s)
