@@ -1,7 +1,11 @@
 # Gitcoin Grants Data Dashboard
 
+## [Live Dashboard](https://gitcoin.co/grants-data)
+
+
 ## Overview
 This project is a dashboard for visualizing Gitcoin Grants data. It provides real-time analytics and insights into Gitcoin's grant programs, funding rounds, and community participation.
+
 
 ## Architecture
 - **Frontend**: Streamlit web application
