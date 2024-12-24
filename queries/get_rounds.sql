@@ -40,3 +40,4 @@ WHERE
     r."chain_id" != 11155111 -- DO NOT USE SEPOLIA
     AND "donations_end_time" <= '2030-01-01'
     AND (r."round_metadata" #>> '{name}')::text IS NOT NULL
+ORDER BY donations_end_time DESC

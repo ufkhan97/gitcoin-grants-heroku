@@ -13,70 +13,62 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title('🕸 Gitcoin Grants Networks')
-st.write('This network graph helps visualize the connections between donors and projects in the Gitcoin Grants Beta Rounds. The graph is interactive, so you can hover over a node to see who it is, zoom in and out and drag the graph around to explore it.')
-st.write('One use for this graph is to identify interesting outliers such as grants who have their own distinct donor base.')
+st.title('🕸 Network Analysis: Gitcoin Grants')
+st.write('This interactive network visualization displays connections between donors and projects in the Gitcoin Grants Rounds. Explore relationships by zooming, panning, and hovering over nodes to view details.')
+st.write('The visualization helps identify patterns such as projects with unique donor bases and community clustering.')
 
-program_data = pd.read_csv("data/all_rounds.csv")
-program_option = st.selectbox( 'Select Program', program_data['program'].unique())
+dfr = utils.get_round_data()
+program_option = st.selectbox('Select Program', dfr['program'].unique())
 st.title(program_option)
 
 if "program_option" in st.session_state and st.session_state.program_option != program_option:
     st.session_state.data_loaded = False
 st.session_state.program_option = program_option
 
-
 if "data_loaded" in st.session_state and st.session_state.data_loaded:
-    dfv = st.session_state.dfv
     dfp = st.session_state.dfp
     dfr = st.session_state.dfr
-    round_data = st.session_state.round_data
+    unique_donors = st.session_state.unique_donors
+    hourly_contributions = st.session_state.hourly_contributions
 else:
     data_load_state = st.text('Loading data...')
-    dfv, dfp, dfr, round_data = utils.load_round_data(program_option, "data/all_rounds.csv")
+    dfp, dfr, unique_donors, hourly_contributions = utils.load_round_data(program_option, dfr)
     data_load_state.text("")
-    
+
 
 # After round selection
 option = st.selectbox(
     'Select Round',
     dfr['options'].unique())
-option = option.split(' | ')[0]
-dfv = dfv[dfv['round_name'] == option]
-dfp = dfp[dfp['round_name'] == option]
-dfr = dfr[dfr['round_name'] == option]
+
+# Filter data for selected round
+dfr = dfr[dfr['options'] == option]
+
+# Get voters data for network graph
+round_chain_pairs = [
+    (str(row['round_id']).lower(), str(row['chain_id'])) 
+    for _, row in dfr.iterrows()
+]
+votes_by_voter_and_project = utils.get_voters_by_project(round_chain_pairs)
 
 
-# sum amountUSD group by voter and grantAddress
-dfv = dfv.groupby(['voter_id', 'grantAddress', 'title']).agg({'amountUSD': 'sum', 'block_timestamp': 'min'}).reset_index()
+# Minimum donation amount filter
+min_donation = st.slider('Minimum donation amount', value=5, max_value=50, min_value=1, step=1)
+votes_filtered = votes_by_voter_and_project[votes_by_voter_and_project['amountUSD'] > min_donation]
 
-
-# Minimum donation amount to include, start at 10
-min_donation = st.slider('Minimum donation amount', value=10, max_value=50, min_value=1, step=1)
-# Minimum passport score to include, start at 20
-#min_passport_score = st.slider('Minimum Passport Score', value=0, max_value=100, min_value=0, step=1)
-
-# Filter the dataframe to include only rows with donation amounts above the threshold
-dfv = dfv[dfv['amountUSD'] > min_donation]
-# Filter the dataframe to include only rows with donation amounts above the threshold
-#df = dfv[dfv['rawScore'] > min_passport_score]
-
-count_connections = dfv.shape[0]
-count_voters = dfv['voter_id'].nunique()
-count_grants = dfv['title'].nunique()
-
-# Sort the DataFrame by timestamp
-dfv = dfv.sort_values(by='block_timestamp')
+count_connections = votes_filtered.shape[0]
+count_voters = votes_filtered['voter_id'].nunique()
+count_grants = votes_filtered['project_name'].nunique()
 
 # Check if the number of connections exceeds 10,000
-if dfv.shape[0] > 10000:
+if votes_filtered.shape[0] > 10000:
     # Calculate the fraction to sample
-    frac_to_sample = 10000 / dfv.shape[0]
-    dfv = dfv.sample(frac=frac_to_sample, random_state=42)
+    frac_to_sample = 10000 / votes_filtered.shape[0]
+    votes_filtered = votes_filtered.sample(frac=frac_to_sample, random_state=42)
 
-count_connections = dfv.shape[0]
-count_voters = dfv['voter_id'].nunique()
-count_grants = dfv['title'].nunique()
+count_connections = votes_filtered.shape[0]
+count_voters = votes_filtered['voter_id'].nunique()
+count_grants = votes_filtered['project_name'].nunique()
 
 
 color_toggle = st.checkbox('Toggle colors', value=True)
@@ -94,21 +86,21 @@ else:
     voter_color_string = 'green'
     line_color = '#6E9A82'
 
-note_string = '**- Note: ' + str(count_grants) + ' Grantees are in ' + grantee_color_string + ' and ' + str(count_voters) + ' donors/voters are in ' + voter_color_string + ' forming ' + str(count_connections) + ' connections. **'
+note_string = f'**Network Summary:** {count_grants} Projects | {count_voters} Donors | {count_connections} Connections'
 st.markdown(note_string)
-st.markdown('**- Tip: Go fullscreen with the arrows in the top-right for a better view.**')
+st.markdown('*Use fullscreen mode (↗️) for optimal viewing*')
 # Initialize a new Graph
 B = nx.Graph()
 
 # Create nodes with the bipartite attribute
-B.add_nodes_from(dfv['voter_id'].unique(), bipartite=0, color=voters_color) 
-B.add_nodes_from(dfv['title'].unique(), bipartite=1, color=grants_color) 
+B.add_nodes_from(votes_filtered['voter_id'].unique(), bipartite=0, color=voters_color) 
+B.add_nodes_from(votes_filtered['project_name'].unique(), bipartite=1, color=grants_color) 
 
 
 
 # Add edges with amountUSD as an attribute
-for _, row in dfv.iterrows():
-    B.add_edge(row['voter_id'], row['title'], amountUSD=row['amountUSD'])
+for _, row in votes_filtered.iterrows():
+    B.add_edge(row['voter_id'], row['project_name'], amountUSD=row['amountUSD'])
 
 
 

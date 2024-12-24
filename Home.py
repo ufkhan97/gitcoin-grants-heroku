@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="Data - Gitcoin Grants",
     page_icon="assets/favicon.png",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 ## DEPLOYED ON HEROKU 
@@ -268,7 +268,6 @@ def generate_round_summary(hourly_contributions, dfp, dfr):
     
     # Sort by total donated
     round_summary = round_summary.sort_values('total_donated', ascending=False)
-    
     # Select and order final columns
     round_summary = round_summary[[
         'round_name',
@@ -460,10 +459,8 @@ else:
         height=38 + (len(round_summary) * 35)   # header_height + (num_rows * row_height) + padding
     )
 
-
+    st.header("Round Details")
     if dfp['round_id'].nunique() > 1:
-
-        st.title("Round Details")
         # selectbox to select the round
         option = st.selectbox(
             'Select Round',
@@ -471,33 +468,21 @@ else:
         option = option.split(' | ')[0]
         dfp = dfp[dfp['round_name'] == option]
         dfr = dfr[dfr['round_name'] == option]
-        round_chain_pairs = [(str(dfr.iloc[0]['round_id']).lower(), str(dfr.iloc[0]['chain_id']))]
-        dfv = utils.get_voters_by_project(round_chain_pairs)
-        dfp['votes'] = dfp['votes'].astype(int)
-        dfp['amountUSD'] = dfp['amountUSD'].astype(float)
-        col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric('Matching Pool', '${:,.0f}'.format(round(dfr['match_amount_in_usd'].sum(), -3)))
-        col2.metric('Total Donated', '${:,.0f}'.format(dfp['amountUSD'].sum()))
-        col3.metric('Total Donations',  '{:,.0f}'.format(dfp['votes'].sum()))
-        col4.metric('Total Projects',  '{:,.0f}'.format(len(dfp)))
-        col5.metric('Unique Donors',  '{:,.0f}'.format(dfv['voter'].nunique()))
-
-    treemap_dfv = dfv[dfv['project_name'].isin(dfp['title'])]
-    st.plotly_chart(create_treemap(treemap_dfv), use_container_width=True)
-
-    #df = pd.merge(dfv, dfp[['projectId', 'title']], how='left', left_on='projectId', right_on='projectId')
-
-
-    st.write('## Grants Leaderboard')
-    dfp['Project Link'] = 'https://explorer.gitcoin.co/#/round/' + dfp['chain_id'].astype(str) +'/' + dfp['round_id'].astype(str) + '/' + dfp['id'].astype(str)
+    dfp['Project Link'] = 'https://explorer.gitcoin.co/#/round/' + dfp['chain_id'].astype(str) + '/' + dfp['round_id'].astype(str) + '/' + dfp['projectId'].astype(str)
     df_display = dfp[['title', 'unique_donors_count', 'amountUSD', 'Project Link']].sort_values('unique_donors_count', ascending=False)
-    df_display.columns = ['Title', 'Donors', '$ Amount (USD)', 'Project Link']
-    df_display['$ Amount (USD)'] = df_display['$ Amount (USD)'].round(2)
-    df_display = df_display.reset_index(drop=True)
-    df_display['Title'] = df_display.apply(lambda row: f'<a href="{row["Project Link"]}">{row["Title"]}</a>', axis=1)
-    df_display = df_display.drop(columns=['Project Link'])
-    df_html = df_display.to_html(escape=False, index=False)
-    st.write(df_html, unsafe_allow_html=True)
+    
+    st.dataframe(
+        df_display,
+        column_config={
+            "title": st.column_config.TextColumn("Title"),
+            "unique_donors_count": st.column_config.NumberColumn("Donors", format="%d"),
+            "amountUSD": st.column_config.NumberColumn("Amount (USD)", format="$%.2f"),
+            "Project Link": st.column_config.LinkColumn("Project", display_text="View")
+        },
+        hide_index=True,
+        use_container_width=True,
+        height=800
+    )
 
 
     #create_project_spotlight(dfv, dfp)

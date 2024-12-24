@@ -150,7 +150,6 @@ def get_voters_by_project(round_chain_pairs):
     SELECT
         (a.metadata->'application'->'project'->>'title') AS "project_name",
         d.donor_address AS "voter",
-        ens.name AS "ens_name",
         coalesce(ens.name, d.donor_address) AS "voter_id",
         sum(d.amount_in_usd) AS "amountUSD"
     FROM
@@ -164,7 +163,8 @@ def get_voters_by_project(round_chain_pairs):
         AND a.chain_id = d.chain_id
     LEFT JOIN   "experimental_views"."ens_names_allo_donors_20241022231136" ens
         ON d.donor_address = ens.address
-    GROUP BY 1, 2, 3, 4
+    GROUP BY 1, 2, 3
+    ORDER BY 4 desc 
     """
 
     return run_query(query, database='grants', is_file=False)
